@@ -41,6 +41,8 @@ document.querySelectorAll('form').forEach(function (form) {
 });
 function euroformSubmit(evt, btn) {
   evt.preventDefault();
+  evt.stopPropagation();
+  if (evt.stopImmediatePropagation) evt.stopImmediatePropagation();
   var form = btn.closest('form');
   if (form) form.requestSubmit();
 }
