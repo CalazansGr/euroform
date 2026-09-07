@@ -2377,7 +2377,7 @@ var GModalApproval = function(){
  instalar_scripts :function(configuracao,loader){
  if(loader == undefined){loader = true;}
  
- let cookie = GModalApproval.preferencias();
+ let cookie = GModalApproval.preferencias() || '';
  
  if(configuracao.opcoes != ''){for (var x = 0;x < configuracao.opcoes.length;x++){configuracao.opcoes[x].valor = (cookie.indexOf(configuracao.opcoes[x].id+':1') !== -1 ? true :false);}}
  if(configuracao.hasOwnProperty('opcoes')){
@@ -2731,11 +2731,14 @@ GObserver.iniciar();
 
  var popupID = 'e_000000';
  window.onload = function(){
- document.getElementById(popupID).style.display = 'block';
+ var __popupEl = document.getElementById(popupID);
+ if (__popupEl) { __popupEl.style.display = 'block'; }
  };
- document.getElementById(popupID).addEventListener('submit', function(){
- document.getElementById(popupID).style.display = 'none';
- });
+ var __popupEl2 = document.getElementById(popupID);
+ if (__popupEl2) { __popupEl2.addEventListener('submit', function(){
+ var __popupEl3 = document.getElementById(popupID);
+ if (__popupEl3) { __popupEl3.style.display = 'none'; }
+ }); }
 
 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],

@@ -1722,7 +1722,7 @@ var GModalApproval = function(){
  instalar_scripts :function(configuracao,loader){
  if(loader == undefined){loader = true;}
  
- let cookie = GModalApproval.preferencias();
+ let cookie = GModalApproval.preferencias() || '';
  
  if(configuracao.opcoes != ''){for (var x = 0;x < configuracao.opcoes.length;x++){configuracao.opcoes[x].valor = (cookie.indexOf(configuracao.opcoes[x].id+':1') !== -1 ? true :false);}}
  if(configuracao.hasOwnProperty('opcoes')){
