@@ -871,7 +871,7 @@
  'classe':'',
  'texto':'Usamos cookies para personalizar conteúdos e melhorar a sua experiência.',
  'botao_configurar':false,
- 'botao_aceitar':'Ok, entendi',
+ 'botao_aceitar':'Entendi e aceito',
  'fechar':false,
  'editar_consentimento':false
 },
