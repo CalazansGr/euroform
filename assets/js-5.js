@@ -2765,10 +2765,12 @@ fbq('track', 'PageView');
 
 const btnMobile = document.getElementById('btn-mobile');
 
+var __euroMenuEl = document.getElementById('menu'); if (__euroMenuEl && __euroMenuEl.parentElement !== document.body) { document.body.appendChild(__euroMenuEl); }
 function toggleMenu(event){
  if (event.type === 'touchstart') event.preventDefault();
  const nav = document.getElementById('nav');
  nav.classList.toggle('active');
+ document.getElementById('menu').classList.toggle('menu-open', nav.classList.contains('active'));
  const active = nav.classList.contains('active');
  event.currentTarget.setAttribute('aria-expanded', active);
  if (active){
