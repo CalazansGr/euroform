@@ -45,4 +45,45 @@ function euroformSubmit(evt, btn) {
   var form = btn.closest('form');
   if (form) form.requestSubmit();
 }
+</script><script>
+function euroformEnforceMargins() {
+  if (window.innerWidth > 800) return;
+  var MIN_MARGIN = 16;
+  var vw = window.innerWidth;
+  document.querySelectorAll('.gpc-e.e_texto, .gpc-e.e_titulo').forEach(function (el) {
+    var cs = getComputedStyle(el);
+    if (cs.position !== 'absolute') return;
+    var left = parseFloat(cs.left);
+    var width = parseFloat(cs.width);
+    if (isNaN(left) || isNaN(width) || width <= 0) return;
+    var rect = el.getBoundingClientRect();
+    if (rect.width === 0) return;
+    var newLeft = left, newWidth = width;
+    var leftGap = rect.left;
+    var rightGap = vw - (rect.left + rect.width);
+    if (leftGap < MIN_MARGIN) {
+      var diffLeft = MIN_MARGIN - leftGap;
+      newLeft = left + diffLeft;
+      newWidth = newWidth - diffLeft;
+    }
+    var newRightGap = vw - (rect.left + (newLeft - left) + newWidth);
+    if (rightGap < MIN_MARGIN) {
+      var diffRight = MIN_MARGIN - rightGap;
+      newWidth = newWidth - diffRight;
+    }
+    if (newWidth > 20 && (newLeft !== left || newWidth !== width)) {
+      var originalHeight = el.offsetHeight;
+      var prevLeft = el.style.left, prevWidth = el.style.width;
+      el.style.left = newLeft + 'px';
+      el.style.width = newWidth + 'px';
+      if (el.scrollHeight > originalHeight + 2) {
+        el.style.left = prevLeft;
+        el.style.width = prevWidth;
+      }
+    }
+  });
+}
+if (document.readyState === 'complete') { euroformEnforceMargins(); }
+else { window.addEventListener('load', euroformEnforceMargins); }
+window.addEventListener('resize', euroformEnforceMargins);
 </script></body></html>
