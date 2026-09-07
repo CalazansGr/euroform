@@ -904,7 +904,7 @@
  }
 }
  ],
- 'dominio':'.euroform.com.br',
+ 'dominio':'',
  'editado':(GModalApproval.preferencias() ? true :false)
 });
 }
