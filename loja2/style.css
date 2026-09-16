@@ -119,6 +119,9 @@ a:focus-visible, button:focus-visible {
 }
 .hero h1 { font-size: clamp(2rem, 5vw, 3rem); max-width: 16ch; }
 .hero-subtitulo { color: var(--cor-texto-secundario); font-size: 18px; max-width: 48ch; }
+.hero-selos { display: flex; flex-wrap: wrap; gap: var(--espaco-3); margin: var(--espaco-2) 0 0; padding: 0; list-style: none; }
+.hero-selos li { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--cor-texto-principal); }
+.hero-selos .icone { width: 18px; height: 18px; fill: var(--cor-acento-hover); flex-shrink: 0; }
 .hero-botoes { display: flex; flex-wrap: wrap; gap: var(--espaco-2); margin-top: var(--espaco-3); }
 .hero-imagem { border-radius: 12px; overflow: hidden; background: var(--cor-fundo-alt); }
 .hero-imagem img { width: 100%; height: 100%; object-fit: cover; }
