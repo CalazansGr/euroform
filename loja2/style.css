@@ -278,36 +278,42 @@ a:focus-visible, button:focus-visible {
   color: var(--cor-acento);
 }
 
-/* ===== Depoimentos ===== */
-.depoimentos { padding: var(--espaco-6) 0; background: var(--cor-fundo-alt); }
-.depoimentos-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--espaco-3);
-  margin-top: var(--espaco-5);
+/* ===== Depoimentos (letreiro de prints) ===== */
+.depoimentos { padding: var(--espaco-6) 0; background: var(--cor-fundo); overflow: hidden; }
+.depo-fileiras { display: flex; flex-direction: column; gap: var(--espaco-2); margin-top: var(--espaco-4); }
+.depo-fileira { overflow: hidden; display: flex; }
+.depo-track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 0 6px;
+  animation: depo-marquee 58s linear infinite;
 }
-@media (min-width: 768px) {
-  .depoimentos-grid { grid-template-columns: repeat(3, 1fr); }
+.depo-fileira--direita .depo-track { animation-direction: reverse; }
+.depo-fileira:hover .depo-track { animation-play-state: paused; }
+@keyframes depo-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
 }
-.depoimento-card {
-  background: #fff;
-  border: 1px solid var(--cor-borda);
-  border-radius: 12px;
-  padding: var(--espaco-3);
-  margin: 0;
+.depo-print { flex-shrink: 0; }
+.depo-print img {
+  height: 200px;
+  width: auto;
+  display: block;
+  border-radius: 14px;
+  box-shadow: 0 0 0 3px rgba(255, 178, 0, 0.55), 0 4px 14px rgba(0, 0, 0, 0.12);
 }
-.depoimento-estrelas { color: var(--cor-acento-hover); font-size: 18px; margin-bottom: var(--espaco-1); }
-.depoimento-card blockquote { margin: 0 0 var(--espaco-3); font-style: italic; color: var(--cor-texto-principal); }
-.depoimento-card figcaption { display: flex; align-items: center; gap: var(--espaco-2); }
-.depoimento-avatar {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: var(--cor-texto-principal); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--fonte-titulo); font-weight: 700; flex-shrink: 0;
+
+@media (max-width: 639px) {
+  .depo-print img { height: 140px; }
+  .depo-track { gap: 8px; }
 }
-.depoimento-dados { display: flex; flex-direction: column; font-size: 14px; }
-.depoimento-nome { font-weight: 700; }
-.depoimento-empresa { color: var(--cor-texto-secundario); }
+
+@media (prefers-reduced-motion: reduce) {
+  .depo-track { animation: none; }
+  .depo-fileira { overflow-x: auto; }
+}
 
 /* ===== Selo Google ===== */
 .google-selo-secao { padding: var(--espaco-4) 0; text-align: center; }
