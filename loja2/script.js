@@ -44,4 +44,25 @@
       contadores.forEach(function (el) { animarContador(el); });
     }
   }
+
+  // ===== Busca de produtos =====
+  var campoBusca = document.getElementById('busca-produto-input');
+  var cartoes = document.querySelectorAll('.produto-card');
+  if (campoBusca && cartoes.length) {
+    campoBusca.addEventListener('input', function () {
+      var termo = campoBusca.value.trim().toLowerCase();
+      var algumVisivel = false;
+
+      cartoes.forEach(function (cartao) {
+        var nome = cartao.querySelector('.produto-nome');
+        var texto = nome ? nome.textContent.toLowerCase() : '';
+        var corresponde = texto.indexOf(termo) !== -1;
+        cartao.style.display = corresponde ? '' : 'none';
+        if (corresponde) algumVisivel = true;
+      });
+
+      var semResultado = document.querySelector('.produto-sem-resultado');
+      if (semResultado) semResultado.style.display = algumVisivel ? 'none' : 'block';
+    });
+  }
 })();
