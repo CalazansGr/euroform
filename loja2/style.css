@@ -117,6 +117,23 @@ a:focus-visible, button:focus-visible {
   color: var(--cor-acento-hover);
   margin-bottom: var(--espaco-1);
 }
+.google-selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  margin-bottom: var(--espaco-2);
+  transition: box-shadow var(--transicao-rapida), border-color var(--transicao-rapida);
+}
+.google-selo:hover { border-color: var(--cor-acento); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+.google-selo-icone { width: 18px; height: 18px; flex-shrink: 0; }
+.google-selo-estrelas { color: #FBBC04; font-size: 14px; letter-spacing: 1px; }
+.google-selo-texto { font-size: 13px; font-weight: 600; color: var(--cor-texto-principal); white-space: nowrap; }
+.google-selo-texto strong { font-weight: 700; }
+
 .hero h1 { font-size: clamp(2rem, 5vw, 3rem); max-width: 16ch; }
 .hero-subtitulo { color: var(--cor-texto-secundario); font-size: 18px; max-width: 48ch; }
 .hero-selos { display: flex; flex-wrap: wrap; gap: var(--espaco-3); margin: var(--espaco-2) 0 0; padding: 0; list-style: none; }
@@ -143,14 +160,14 @@ a:focus-visible, button:focus-visible {
   color: var(--cor-texto-secundario);
   margin-bottom: var(--espaco-3);
 }
-.marquee-wrapper { overflow: hidden; display: flex; }
+.marquee-wrapper { overflow: hidden; display: flex; background: var(--cor-acento); padding: var(--espaco-3) 0; }
 .marquee-track {
   display: flex;
   align-items: center;
-  gap: var(--espaco-2);
+  gap: var(--espaco-5);
   flex-shrink: 0;
   animation: marquee 32s linear infinite;
-  padding: 0 var(--espaco-2);
+  padding: 0 var(--espaco-3);
 }
 .marquee-wrapper:hover .marquee-track { animation-play-state: paused; }
 @keyframes marquee {
@@ -161,19 +178,14 @@ a:focus-visible, button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 148px;
-  height: 76px;
+  height: 64px;
   flex-shrink: 0;
-  background: #fff;
-  border: 1px solid var(--cor-borda);
-  border-radius: 10px;
-  padding: var(--espaco-1) var(--espaco-2);
 }
-.marquee-logo img { max-height: 40px; max-width: 100%; width: auto; object-fit: contain; }
+.marquee-logo img { max-height: 64px; max-width: 180px; width: auto; object-fit: contain; }
 .marquee-logo-texto span {
   font-family: var(--fonte-titulo);
-  font-weight: 600;
-  font-size: 17px;
+  font-weight: 700;
+  font-size: 24px;
   color: var(--cor-texto-principal);
   white-space: nowrap;
 }
