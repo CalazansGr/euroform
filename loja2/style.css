@@ -140,13 +140,13 @@ a:focus-visible, button:focus-visible {
 .hero-selos li { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--cor-texto-principal); }
 .hero-selos .icone { width: 18px; height: 18px; fill: var(--cor-acento-hover); flex-shrink: 0; }
 .hero-botoes { display: flex; flex-wrap: wrap; gap: var(--espaco-2); margin-top: var(--espaco-3); }
-.hero-imagem { border-radius: 12px; overflow: hidden; background: var(--cor-fundo-alt); }
-.hero-imagem img { width: 100%; height: 100%; object-fit: cover; }
+.hero-imagem { display: none; border-radius: 12px; overflow: hidden; background: var(--cor-fundo-alt); }
+.hero-imagem img { width: 100%; height: 100%; object-fit: contain; }
 
 @media (min-width: 1024px) {
   .hero-inner { flex-direction: row; align-items: center; }
   .hero-texto { flex: 1; }
-  .hero-imagem { flex: 1; max-height: 480px; }
+  .hero-imagem { display: block; flex: 1; height: 480px; }
 }
 
 /* ===== Esteira de clientes (marquee) ===== */
