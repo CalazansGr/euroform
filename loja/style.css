@@ -162,6 +162,8 @@ a:focus-visible, button:focus-visible {
   .hero-subtitulo { font-size: 15px; max-width: 30ch; }
   .hero-subtitulo-desktop { display: none; }
   .hero-subtitulo-mobile { display: block; }
+  .google-selo { max-width: 100%; padding: 8px 12px; }
+  .google-selo-texto { white-space: normal; }
 }
 
 /* ===== Esteira de clientes (marquee) ===== */
