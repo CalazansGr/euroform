@@ -108,12 +108,15 @@ a:focus-visible, button:focus-visible {
 /* ===== Hero ===== */
 .hero {
   padding: var(--espaco-6) 0;
+  min-height: clamp(420px, 37vw, 900px);
+  display: flex;
+  align-items: center;
   background:
     linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.15) 75%, rgba(0,0,0,0) 100%),
     url('../assets/produtos/loja2-hero-fundo.jpeg') center right / cover no-repeat;
   color: #fff;
 }
-.hero-inner { display: flex; flex-direction: column; gap: var(--espaco-4); }
+.hero-inner { display: flex; flex-direction: column; gap: var(--espaco-4); width: 100%; }
 .eyebrow {
   font-family: var(--fonte-titulo);
   font-weight: 600;
