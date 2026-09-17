@@ -44,4 +44,14 @@
       contadores.forEach(function (el) { animarContador(el); });
     }
   }
+
+  // ===== Menu mobile =====
+  var botaoMenu = document.querySelector('.novo-menu-btn');
+  var menuMobile = document.querySelector('.novo-nav-mobile');
+  if (botaoMenu && menuMobile) {
+    botaoMenu.addEventListener('click', function () {
+      var aberto = menuMobile.classList.toggle('aberto');
+      botaoMenu.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+    });
+  }
 })();

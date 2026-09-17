@@ -105,6 +105,24 @@ a:focus-visible, button:focus-visible {
   .botao-cabecalho { padding: 9px 14px; font-size: 13px; }
 }
 
+.novo-cabecalho { position: sticky; top: 0; z-index: 999; background: rgba(255,255,255,0.96); backdrop-filter: blur(6px); border-bottom: 1px solid var(--cor-borda); }
+.novo-cabecalho-inner { max-width: 1200px; margin: 0 auto; padding: var(--espaco-1) var(--espaco-2); display: flex; align-items: center; justify-content: space-between; gap: var(--espaco-2); }
+.novo-nav { display: flex; align-items: center; gap: var(--espaco-3); }
+.novo-nav a { font-family: var(--fonte-titulo); font-weight: 600; font-size: 14px; color: var(--cor-texto-principal); text-decoration: none; white-space: nowrap; transition: color var(--transicao-rapida); }
+.novo-nav a:hover { color: var(--cor-acento); }
+.novo-cta { font-family: var(--fonte-titulo); font-weight: 600; font-size: 14px; background: var(--cor-acento); color: var(--cor-texto-principal); padding: 10px 18px; border-radius: 6px; text-decoration: none; white-space: nowrap; transition: background var(--transicao-rapida); }
+.novo-cta:hover { background: var(--cor-acento-hover); }
+.novo-menu-btn { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; background: none; border: 0; cursor: pointer; flex-shrink: 0; }
+.novo-menu-btn svg { width: 24px; height: 24px; fill: none; stroke: var(--cor-texto-principal); stroke-width: 2; stroke-linecap: round; }
+.novo-nav-mobile { display: none; flex-direction: column; padding: 8px var(--espaco-2) var(--espaco-2); border-top: 1px solid var(--cor-borda); background: var(--cor-fundo); }
+.novo-nav-mobile a { font-family: var(--fonte-titulo); font-weight: 600; font-size: 15px; color: var(--cor-texto-principal); text-decoration: none; padding: 12px 0; border-bottom: 1px solid var(--cor-borda); }
+.novo-nav-mobile a:last-child { border-bottom: 0; }
+.novo-nav-mobile.aberto { display: flex; }
+@media (max-width: 768px) {
+  .novo-nav { display: none; }
+  .novo-menu-btn { display: flex; }
+}
+
 /* ===== Hero ===== */
 .hero {
   padding: var(--espaco-6) 0;
