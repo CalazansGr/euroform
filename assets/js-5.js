@@ -2747,6 +2747,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-58BFSV6');
  window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', 'AW-927237038');
  function gtag_report_conversion(url){var callback = function (){if (typeof(url) != 'undefined'){window.location = url;}};gtag('event', 'conversion',{'send_to':'AW-927237038/CIpJCMGVwdACEK6HkroD', 'event_callback':callback});return false;}
+ window.gtag = gtag;
+ window.gtag_report_conversion = gtag_report_conversion;
 
 
 
