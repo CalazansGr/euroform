@@ -106,7 +106,13 @@ a:focus-visible, button:focus-visible {
 }
 
 /* ===== Hero ===== */
-.hero { padding: var(--espaco-5) 0; }
+.hero {
+  padding: var(--espaco-6) 0;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.15) 75%, rgba(0,0,0,0) 100%),
+    url('../assets/produtos/loja2-hero-fundo.jpeg') center right / cover no-repeat;
+  color: #fff;
+}
 .hero-inner { display: flex; flex-direction: column; gap: var(--espaco-4); }
 .eyebrow {
   font-family: var(--fonte-titulo);
@@ -114,7 +120,7 @@ a:focus-visible, button:focus-visible {
   font-size: 13px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--cor-acento-hover);
+  color: var(--cor-acento);
   margin-bottom: var(--espaco-1);
 }
 .google-selo {
@@ -134,19 +140,21 @@ a:focus-visible, button:focus-visible {
 .google-selo-texto { font-size: 13px; font-weight: 600; color: var(--cor-texto-principal); white-space: nowrap; }
 .google-selo-texto strong { font-weight: 700; }
 
-.hero h1 { font-size: clamp(2rem, 5vw, 3rem); max-width: 16ch; }
-.hero-subtitulo { color: var(--cor-texto-secundario); font-size: 18px; max-width: 48ch; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); max-width: 16ch; color: #fff; }
+.hero-subtitulo { color: rgba(255,255,255,0.85); font-size: 18px; max-width: 48ch; }
 .hero-selos { display: flex; flex-wrap: wrap; gap: var(--espaco-3); margin: var(--espaco-2) 0 0; padding: 0; list-style: none; }
-.hero-selos li { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--cor-texto-principal); }
-.hero-selos .icone { width: 18px; height: 18px; fill: var(--cor-acento-hover); flex-shrink: 0; }
+.hero-selos li { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: #fff; }
+.hero-selos .icone { width: 18px; height: 18px; fill: var(--cor-acento); flex-shrink: 0; }
 .hero-botoes { display: flex; flex-wrap: wrap; gap: var(--espaco-2); margin-top: var(--espaco-3); }
-.hero-imagem { display: none; border-radius: 12px; overflow: hidden; background: var(--cor-fundo-alt); }
-.hero-imagem img { width: 100%; height: 100%; object-fit: contain; }
+.hero .botao-secundario { background: transparent; color: #fff; border-color: rgba(255,255,255,0.6); }
+.hero .botao-secundario:hover { background: #fff; color: var(--cor-texto-principal); border-color: #fff; }
 
 @media (min-width: 1024px) {
   .hero-inner { flex-direction: row; align-items: center; }
   .hero-texto { flex: 1; }
-  .hero-imagem { display: block; flex: 1; height: 480px; }
+}
+@media (max-width: 767px) {
+  .hero { background-position: 78% center; min-height: 420px; }
 }
 
 /* ===== Esteira de clientes (marquee) ===== */
