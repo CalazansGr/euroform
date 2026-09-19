@@ -566,3 +566,11 @@ a:focus-visible, button:focus-visible {
   .prod-layout { grid-template-columns: 1.1fr 1fr; gap: var(--espaco-4); }
   .prod-galeria { position: sticky; top: 96px; }
 }
+
+/* ===== WhatsApp flutuante: chama atenção ===== */
+.whatsapp-flutuante, .float { animation: zap-balanco 6s ease-in-out infinite; }
+.whatsapp-flutuante::before, .float::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: inherit; opacity: .55; z-index: -1; animation: zap-pulso 2s ease-out infinite; pointer-events: none; }
+.whatsapp-flutuante:hover, .float:hover { animation: none; }
+@keyframes zap-pulso { 0% { transform: scale(1); opacity: .55; } 70%, 100% { transform: scale(1.75); opacity: 0; } }
+@keyframes zap-balanco { 0%, 86%, 100% { transform: rotate(0); } 88% { transform: rotate(-14deg); } 90% { transform: rotate(14deg); } 92% { transform: rotate(-9deg); } 94% { transform: rotate(9deg); } 96% { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .whatsapp-flutuante, .float, .whatsapp-flutuante::before, .float::before { animation: none; } }
