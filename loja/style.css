@@ -338,18 +338,18 @@ a:focus-visible, button:focus-visible {
   padding: 12px;
   transition: box-shadow var(--transicao-padrao), transform var(--transicao-padrao);
   display: grid;
-  grid-template-columns: 42% 1fr;
+  grid-template-columns: 44% 1fr;
   gap: 12px;
   align-items: start;
 }
 .produto-card:hover { box-shadow: 0 12px 24px rgba(0,0,0,0.06); transform: translateY(-4px); }
 .produto-foto {
   position: relative;
-  aspect-ratio: 1/1;
+  aspect-ratio: 4/5;
   border-radius: 8px;
   overflow: hidden;
-  background: var(--cor-fundo-alt);
-  padding: 2px;
+  background: #fff;
+  padding: 0;
 }
 .produto-foto img { width: 100%; height: 100%; object-fit: contain; }
 .produto-badge {
@@ -399,43 +399,26 @@ a:focus-visible, button:focus-visible {
 .selo-nr17 b { font-family: var(--fonte-titulo); }
 .produto-avaliacao { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; color: var(--cor-texto-secundario); }
 .produto-avaliacao .estrelas { color: #FBBC04; letter-spacing: 1px; font-size: 14px; }
+.produto-acoes { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; margin-top: 2px; }
 .produto-cta {
-  margin-top: 4px;
+  flex-shrink: 0;
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  font-family: var(--fonte-titulo);
-  font-weight: 600;
-  font-size: 13px;
-  white-space: nowrap;
-  background: var(--cor-texto-principal);
+  width: 44px;
+  height: 44px;
+  background: var(--cor-whatsapp);
   color: #fff;
-  padding: 8px 8px;
-  gap: 6px;
-  max-width: 100%;
-  border-radius: 6px;
-  min-height: 44px;
+  border-radius: 50%;
   transition: background var(--transicao-padrao);
 }
-.produto-cta:hover { background: var(--cor-acento-hover); color: var(--cor-texto-principal); }
-.produto-cta-icone {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255,255,255,0.16);
-  border-radius: 4px 4px 4px 0;
-}
-.produto-cta-icone svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.produto-cta:hover .produto-cta-icone { background: rgba(36,36,36,0.12); }
+.produto-cta svg { width: 26px; height: 26px; fill: currentColor; }
+.produto-cta:hover { background: var(--cor-whatsapp-hover); }
 @media (min-width: 768px) {
   .produto-card { grid-template-columns: 1fr; padding: var(--espaco-2); }
   .produto-foto { max-width: 300px; width: 100%; margin: 0 auto; }
   .produto-info { gap: 8px; }
   .produto-nome { font-size: 18px; }
-  .produto-cta { width: 100%; }
 }
 
 /* ===== Contadores ===== */
