@@ -534,3 +534,35 @@ a:focus-visible, button:focus-visible {
 @media (max-width: 767px) {
   .whatsapp-flutuante { width: 52px; height: 52px; bottom: 16px; right: 16px; }
 }
+
+/* ===== Links nos cards do catálogo ===== */
+.produto-foto a { display: block; width: 100%; height: 100%; }
+.produto-nome a { color: inherit; }
+.produto-nome a:hover { text-decoration: underline; text-decoration-color: var(--cor-acento); text-underline-offset: 3px; }
+
+/* ===== Página de cada cadeira ===== */
+.prod-pagina { padding: var(--espaco-3) 0 var(--espaco-5); }
+.prod-voltar { display: inline-block; margin-bottom: var(--espaco-2); font-size: 14px; font-weight: 600; color: var(--cor-texto-secundario); }
+.prod-voltar:hover { color: var(--cor-texto-principal); }
+.prod-layout { display: grid; grid-template-columns: 1fr; gap: var(--espaco-3); align-items: start; }
+.prod-foto-principal { aspect-ratio: 1/1; border: 1px solid var(--cor-borda); border-radius: 12px; background: #fff; overflow: hidden; }
+.prod-foto-principal img { width: 100%; height: 100%; object-fit: contain; }
+.prod-thumbs { display: flex; gap: 8px; margin-top: 8px; overflow-x: auto; }
+.prod-thumb { flex: 0 0 72px; height: 72px; padding: 0; background: #fff; border: 2px solid var(--cor-borda); border-radius: 8px; overflow: hidden; cursor: pointer; }
+.prod-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.prod-thumb.ativo { border-color: var(--cor-acento); }
+.prod-info { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.prod-titulo { font-size: clamp(1.6rem, 4vw, 2.2rem); margin: 0; }
+.prod-descricao p { margin: 0 0 var(--espaco-1); color: var(--cor-texto-secundario); }
+.prod-cta { margin-top: var(--espaco-1); }
+.prod-secao { margin-top: var(--espaco-4); }
+.prod-secao h2 { font-size: 1.4rem; margin-bottom: var(--espaco-2); }
+.prod-destaques li { position: relative; padding: 10px 0 10px 28px; border-bottom: 1px solid var(--cor-borda); }
+.prod-destaques li::before { content: ""; position: absolute; left: 4px; top: 17px; width: 8px; height: 14px; border: solid var(--cor-acento-hover); border-width: 0 3px 3px 0; transform: rotate(45deg) scale(0.7); transform-origin: center; }
+.prod-desenho-caixa { max-width: 760px; overflow-x: auto; border: 1px solid var(--cor-borda); border-radius: 12px; background: #fff; }
+.prod-desenho { width: 100%; min-width: 620px; }
+.prod-legenda { margin: 8px 0 0; font-size: 13px; color: var(--cor-texto-secundario); }
+@media (min-width: 900px) {
+  .prod-layout { grid-template-columns: 1.1fr 1fr; gap: var(--espaco-4); }
+  .prod-galeria { position: sticky; top: 96px; }
+}
