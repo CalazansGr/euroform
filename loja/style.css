@@ -574,3 +574,16 @@ a:focus-visible, button:focus-visible {
 @keyframes zap-pulso { 0% { transform: scale(1); opacity: .55; } 70%, 100% { transform: scale(1.75); opacity: 0; } }
 @keyframes zap-balanco { 0%, 86%, 100% { transform: rotate(0); } 88% { transform: rotate(-14deg); } 90% { transform: rotate(14deg); } 92% { transform: rotate(-9deg); } 94% { transform: rotate(9deg); } 96% { transform: rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .whatsapp-flutuante, .float, .whatsapp-flutuante::before, .float::before { animation: none; } }
+
+/* ===== Avaliações e compras ===== */
+.produto-avaliacao { flex-direction: column; align-items: flex-start; gap: 2px; }
+.produto-avaliacao .linha { display: flex; align-items: center; gap: 6px; }
+.produto-avaliacao .nota { font-weight: 600; color: var(--cor-texto-principal); }
+.produto-avaliacao .vendidas { font-size: 13px; }
+.prod-info .produto-avaliacao { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 14px; }
+.produto-avaliacao .linha { white-space: nowrap; gap: 4px; }
+.produto-avaliacao .linha .estrelas { letter-spacing: 0; font-size: 13px; }
+.produto-avaliacao .nota { font-size: 13px; }
+.prod-info .produto-avaliacao .linha { white-space: normal; gap: 6px; }
+.prod-info .produto-avaliacao .linha .estrelas { font-size: 15px; letter-spacing: 1px; }
+.prod-info .produto-avaliacao .nota { font-size: 14px; }
