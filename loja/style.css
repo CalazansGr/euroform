@@ -485,19 +485,22 @@ a:focus-visible, button:focus-visible {
 
 /* ===== Selo Google ===== */
 .google-selo-secao { padding: var(--espaco-4) 0; text-align: center; }
-.google-selo {
+.google-selo-secao .google-selo {
   display: inline-flex;
   align-items: center;
-  gap: var(--espaco-2);
+  gap: 10px;
+  background: #fff;
   border: 1px solid var(--cor-borda);
   border-radius: 999px;
-  padding: 12px 24px;
-  font-weight: 600;
+  padding: 10px 20px;
+  font-size: 14px;
+  margin: 0;
   transition: border-color var(--transicao-padrao), box-shadow var(--transicao-padrao);
 }
-.google-selo:hover { border-color: var(--cor-texto-principal); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
-.google-icone { width: 22px; height: 22px; }
-.google-cta { color: var(--cor-texto-secundario); }
+.google-selo-secao .google-selo:hover { border-color: var(--cor-texto-principal); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+.google-icone { width: 20px; height: 20px; flex-shrink: 0; }
+.google-texto { font-weight: 600; }
+.google-estrelas { color: #FBBC04; letter-spacing: 1px; }
 
 /* ===== CTA final ===== */
 .cta-final { background: var(--cor-acento); padding: var(--espaco-6) 0; text-align: center; }
