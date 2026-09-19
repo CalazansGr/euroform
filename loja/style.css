@@ -484,7 +484,7 @@ a:focus-visible, button:focus-visible {
 }
 
 /* ===== Selo Google ===== */
-.google-selo-secao { padding: var(--espaco-4) 0; text-align: center; }
+.google-selo-secao { padding: var(--espaco-2) 0 var(--espaco-4); text-align: center; }
 .google-selo-secao .google-selo {
   display: inline-flex;
   align-items: center;
@@ -498,6 +498,7 @@ a:focus-visible, button:focus-visible {
   transition: border-color var(--transicao-padrao), box-shadow var(--transicao-padrao);
 }
 .google-selo-secao .google-selo:hover { border-color: var(--cor-texto-principal); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+.google-chamada { margin: 0 0 var(--espaco-2); font-family: var(--fonte-titulo); font-weight: 600; font-size: 15px; color: var(--cor-texto-principal); text-wrap: balance; }
 .google-icone { width: 20px; height: 20px; flex-shrink: 0; }
 .google-texto { font-weight: 600; }
 .google-estrelas { color: #FBBC04; letter-spacing: 1px; }
