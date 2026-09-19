@@ -587,3 +587,16 @@ a:focus-visible, button:focus-visible {
 .prod-info .produto-avaliacao .linha { white-space: normal; gap: 6px; }
 .prod-info .produto-avaliacao .linha .estrelas { font-size: 15px; letter-spacing: 1px; }
 .prod-info .produto-avaliacao .nota { font-size: 14px; }
+
+/* ===== Cabeçalho em telas muito estreitas ===== */
+@media (max-width: 380px) {
+  .novo-cabecalho-inner { gap: 8px; padding: 8px 12px; }
+  .novo-cta { font-size: 13px; padding: 9px 12px; }
+  .wordmark { font-size: 17px; }
+}
+@media (max-width: 340px) {
+  .novo-cta { font-size: 12px; padding: 8px 8px; }
+  .wordmark { font-size: 16px; }
+}
+.prod-layout > * { min-width: 0; }
+.prod-thumbs { max-width: 100%; }
