@@ -219,3 +219,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--acento)}
 .detalhes .cards{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
 .topo #usuario{margin-left:auto}
 @media(max-width:640px){.topo #btn-exportar{order:2;font-size:13px;padding:8px 10px}.topo strong{flex:1}}
+.nf-topo{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:#fff8e6;border:1px solid #ffd66b;border-radius:10px;padding:12px 14px}
+.nf-topo>span{font-weight:700}
+.nf-topo small{flex:1 1 100%;color:#7a5a00}
+.seg-grande span{padding:11px 20px;font-size:15px}

@@ -216,6 +216,15 @@
   <form id="form-os" class="os-form">
     <h2 id="os-titulo">Nova OS</h2>
 
+    <div class="nf-topo">
+      <span>Nota fiscal</span>
+      <div class="seg seg-grande" role="group" aria-label="Nota fiscal">
+        <label><input type="radio" name="nf" value="0" checked><span>Sem nota fiscal</span></label>
+        <label><input type="radio" name="nf" value="1"><span>Com nota fiscal</span></label>
+      </div>
+      <small>Vale para pessoa física e jurídica. Com NF, desconta 10,5% de Simples.</small>
+    </div>
+
     <fieldset>
       <legend>Cliente</legend>
       <div class="seg" role="group" aria-label="Tipo de cliente">
@@ -244,11 +253,7 @@
     </fieldset>
 
     <fieldset>
-      <legend>Nota fiscal e valores</legend>
-      <div class="seg" role="group" aria-label="Nota fiscal">
-        <label><input type="radio" name="nf" value="0" checked><span>Sem NF</span></label>
-        <label><input type="radio" name="nf" value="1"><span>Com NF</span></label>
-      </div>
+      <legend>Valores</legend>
       <div class="grade">
         <label><span>Preço cobrado (R$)</span><input type="number" id="f-bruto" min="0" step="0.01" inputmode="decimal" required></label>
         <label><span>Custo (R$)</span><input type="number" id="f-custo" min="0" step="0.01" inputmode="decimal"></label>
