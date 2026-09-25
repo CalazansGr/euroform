@@ -205,3 +205,7 @@ h4 span{font-weight:400;color:var(--suave);font-size:13px}
 }
 .tag-andamento{display:inline-block;background:var(--verde-bg);color:var(--verde);border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;vertical-align:1px}
 .andamento-obs{margin-top:6px;font-size:13px;color:var(--verde);background:var(--verde-bg);border-left:3px solid var(--verde);border-radius:6px;padding:4px 8px}
+/* parcela com data a definir */
+.parcela.sem-data .p-venc{background:var(--amarelo-bg);border-color:#ffd66b}
+.parc.sem-data{background:var(--amarelo-bg);border-color:#ffd66b}
+.dica-definir{margin:0;font-size:12px;color:#7a5600}

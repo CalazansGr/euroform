@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Euroform · Painel interno</title>
-<link rel="stylesheet" href="estilo.css?v=3">
+<link rel="stylesheet" href="estilo.css?v=5">
 </head>
 <body>
 
@@ -36,7 +36,7 @@
   <main class="pagina" id="aba-painel">
     <div class="pagina-topo">
       <div><h2>Painel</h2><p class="sub" id="p-sub">Resumo do mês</p></div>
-      <input type="month" id="p-mes" aria-label="Mês" class="mes-painel">
+      <input type="month" id="p-mes" autocomplete="off" aria-label="Mês" class="mes-painel">
     </div>
     <div class="cards cards-4" id="p-cards"></div>
 
@@ -59,9 +59,9 @@
       <button type="button" id="btn-novo-servico">+ Novo serviço</button>
     </div>
     <div class="filtros">
-      <input type="search" id="s-busca" placeholder="Buscar cliente ou descrição...">
-      <input type="month" id="s-mes" aria-label="Mês">
-      <select id="s-situacao" aria-label="Situação">
+      <input type="search" id="s-busca" autocomplete="off" placeholder="Buscar cliente ou descrição...">
+      <input type="month" id="s-mes" autocomplete="off" aria-label="Mês">
+      <select id="s-situacao" autocomplete="off" aria-label="Situação">
         <option value="">Todos</option>
         <option value="andamento">Em andamento</option>
         <option value="aberto">Falta receber</option>
@@ -84,13 +84,13 @@
       </div>
     </div>
     <div class="filtros">
-      <input type="month" id="d-mes" aria-label="Mês">
-      <select id="d-situacao" aria-label="Situação">
+      <input type="month" id="d-mes" autocomplete="off" aria-label="Mês">
+      <select id="d-situacao" autocomplete="off" aria-label="Situação">
         <option value="">Pagas e a pagar</option>
         <option value="aberto">Só a pagar</option>
         <option value="pago">Só pagas</option>
       </select>
-      <select id="d-categoria" aria-label="Tipo">
+      <select id="d-categoria" autocomplete="off" aria-label="Tipo">
         <option value="">Todos os tipos</option>
       </select>
     </div>
@@ -198,10 +198,10 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=3"></script>
-<script src="comum.js?v=3"></script>
-<script src="servicos.js?v=3"></script>
-<script src="despesas.js?v=3"></script>
-<script src="painel.js?v=3"></script>
+<script src="config.js?v=5"></script>
+<script src="comum.js?v=5"></script>
+<script src="servicos.js?v=5"></script>
+<script src="despesas.js?v=5"></script>
+<script src="painel.js?v=5"></script>
 </body>
 </html>

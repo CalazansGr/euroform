@@ -1,6 +1,6 @@
 // Serviços: o que a empresa vendeu e as parcelas que o cliente vai pagar.
 (function () {
-  const { db, $, r2, num, brl, dataBR, diaMes, hoje, soma, esc, erro, confirmar, simNao } = App;
+  const { db, $, r2, num, brl, dataBR, diaMes, porVencimento, hoje, soma, esc, erro, confirmar, simNao } = App;
   const CATS = { venda: 'Venda de cadeiras', manutencao: 'Manutenção / reforma', higienizacao: 'Higienização' };
   App.CATS = CATS;
   let ordens = [], editando = null;
@@ -10,7 +10,7 @@
     return db.from('ordens').select('*, parcelas(*)').order('data', { ascending: false }).order('criado_em', { ascending: false }).then((r) => {
       if (r.error) { alert('Erro ao carregar serviços: ' + r.error.message); return; }
       ordens = r.data;
-      ordens.forEach((o) => o.parcelas.sort((a, b) => (a.vencimento < b.vencimento ? -1 : 1)));
+      ordens.forEach((o) => o.parcelas.sort(porVencimento));
       App.ordens = ordens;
       $('lista-clientes').innerHTML = [...new Set(ordens.map((o) => o.cliente))].sort().map((c) => `<option value="${esc(c)}">`).join('');
       listar();
@@ -19,7 +19,7 @@
 
   function situacao(o) {
     const h = hoje(), abertas = o.parcelas.filter((p) => !p.pago);
-    return { aberto: soma(abertas), recebido: soma(o.parcelas.filter((p) => p.pago)), atrasadas: abertas.filter((p) => p.vencimento < h).length };
+    return { aberto: soma(abertas), recebido: soma(o.parcelas.filter((p) => p.pago)), atrasadas: abertas.filter((p) => p.vencimento && p.vencimento < h).length };
   }
 
   function listar() {
@@ -42,8 +42,8 @@
     const h = hoje();
     $('s-lista').innerHTML = itens.map((o) => {
       const parcelas = o.parcelas.map((p) => {
-        const atraso = !p.pago && p.vencimento < h;
-        return `<div class="parc${p.pago ? ' paga' : ''}${atraso ? ' atraso' : ''}" data-p="${p.id}">` +
+        const atraso = !p.pago && p.vencimento && p.vencimento < h;
+        return `<div class="parc${p.pago ? ' paga' : ''}${atraso ? ' atraso' : ''}${p.vencimento ? '' : ' sem-data'}" data-p="${p.id}">` +
           `<span class="parc-info">${diaMes(p.vencimento)} · <b>${brl(Number(p.valor))}</b>${atraso ? ' <em>atrasada</em>' : ''}</span>` +
           `<span class="parc-rot">Recebido?</span>${simNao(p.pago)}</div>`;
       }).join('');
@@ -76,7 +76,7 @@
 
   // ---------- formulário ----------
   const dlg = $('dlg-servico');
-  const editor = App.editorParcelas($('s-parcelas'), { rotulo: 'Recebido', total: () => num('s-valor'), base: () => $('s-data').value });
+  const editor = App.editorParcelas($('s-parcelas'), { rotulo: 'Recebido', aDefinir: true, total: () => num('s-valor'), base: () => $('s-data').value });
   ['s-valor', 's-data'].forEach((id) => $(id).addEventListener('input', () => editor.atualizar()));
   const radio = (v, nome) => { document.querySelector(`input[name=${nome || 's-tipo'}][value="${v}"]`).checked = true; };
   const nfEmitida = () => document.querySelector('input[name=s-nf]:checked').value === '1';

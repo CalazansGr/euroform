@@ -9,7 +9,9 @@
   const num = (el) => { const v = parseFloat((typeof el === 'string' ? $(el) : el).value); return isNaN(v) ? 0 : v; };
   const brl = (n) => (n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const dataBR = (iso) => iso ? iso.split('-').reverse().join('/') : '';
-  const diaMes = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
+  const diaMes = (iso) => iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) : 'A definir';
+  // ordena por vencimento; parcela sem data (a definir) vai para o fim
+  const porVencimento = (a, b) => ((a.vencimento || '9999') < (b.vencimento || '9999') ? -1 : 1);
   const hoje = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
   const mesAtual = () => hoje().slice(0, 7);
   const somaDias = (iso, dias) => { const p = iso.split('-').map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2] + dias)).toISOString().slice(0, 10); };
@@ -31,7 +33,7 @@
     return `<span class="sn" ${attrs || ''}><button type="button" class="sn-nao${pago ? '' : ' on'}">Não</button><button type="button" class="sn-sim${pago ? ' on' : ''}">Sim</button></span>`;
   }
 
-  const App = { db, $, r2, num, brl, dataBR, diaMes, hoje, mesAtual, somaDias, mesMais, fimDoMes, soma, esc, erro, confirmar, simNao, abas: {} };
+  const App = { db, $, r2, num, brl, dataBR, diaMes, porVencimento, hoje, mesAtual, somaDias, mesMais, fimDoMes, soma, esc, erro, confirmar, simNao, abas: {} };
   window.App = App;
 
   // ---------- abas ----------
@@ -73,24 +75,28 @@
   // ---------- editor de parcelas ----------
   // Monta os botões de prazo (à vista, 30, 30/60...) e as linhas editáveis (data, valor, pago?).
   // Enquanto a pessoa não mexe numa parcela, as parcelas se refazem sozinhas quando muda o valor, a data ou o prazo.
+  // op.aDefinir: permite parcela sem data ("a definir").
   App.editorParcelas = function (el, op) {
     el.innerHTML =
       '<div class="prazos"><span>Prazo:</span>' +
-      ['0|À vista', '30|30 dias', '30/60|30/60', '30/60/90|30/60/90'].map((p) => { const [v, t] = p.split('|'); return `<button type="button" class="sec" data-prazo="${v}">${t}</button>`; }).join('') +
+      ['0|À vista', '30|30 dias', '30/60|30/60', '30/60/90|30/60/90'].concat(op.aDefinir ? ['definir|A definir'] : [])
+        .map((p) => { const [v, t] = p.split('|'); return `<button type="button" class="sec" data-prazo="${v}">${t}</button>`; }).join('') +
       '<label class="prazo-livre"><span>ou dias</span><input class="ed-prazos" placeholder="ex.: 15/45" inputmode="numeric"></label></div>' +
       '<div class="parcelas"></div>' +
       '<button type="button" class="sec mini ed-add">+ Adicionar parcela</button>' +
+      '<p class="dica-definir" hidden>Parcela sem data = pagamento a definir. Quando o cliente disser o dia, é só abrir o serviço e colocar a data.</p>' +
       '<p class="aviso ed-aviso" hidden></p>';
     const caixa = el.querySelector('.parcelas'), campoPrazo = el.querySelector('.ed-prazos'), aviso = el.querySelector('.ed-aviso');
-    let manual = false;
+    let manual = false, aDefinir = false;
 
     function linha(p) {
       const d = document.createElement('div');
       d.className = 'parcela' + (p.pago ? ' paga' : '');
-      d.innerHTML = '<input type="date" class="p-venc" required aria-label="Vencimento"><input type="number" class="p-valor" min="0" step="0.01" inputmode="decimal" required aria-label="Valor">' +
+      d.innerHTML = `<input type="date" class="p-venc"${op.aDefinir ? '' : ' required'} aria-label="Vencimento">` + '<input type="number" class="p-valor" min="0" step="0.01" inputmode="decimal" required aria-label="Valor">' +
         `<label class="p-lbl"><input type="checkbox" class="p-pago"> ${op.rotulo}</label><input type="date" class="p-em" aria-label="${op.rotulo} em">` +
         '<button type="button" class="perigo mini p-del" aria-label="Remover parcela">✕</button>';
       d.querySelector('.p-venc').value = p.vencimento || '';
+      d.classList.toggle('sem-data', !p.vencimento);
       d.querySelector('.p-valor').value = p.valor;
       d.querySelector('.p-pago').checked = !!p.pago;
       d.querySelector('.p-em').value = p.pago ? (p.pago_em || '') : '';
@@ -99,16 +105,24 @@
     function ler() {
       return [...caixa.children].map((d) => {
         const pago = d.querySelector('.p-pago').checked;
-        return { vencimento: d.querySelector('.p-venc').value, valor: r2(num(d.querySelector('.p-valor'))), pago, pago_em: pago ? (d.querySelector('.p-em').value || hoje()) : null };
+        return { vencimento: d.querySelector('.p-venc').value || null, valor: r2(num(d.querySelector('.p-valor'))), pago, pago_em: pago ? (d.querySelector('.p-em').value || hoje()) : null };
       });
     }
     function conferir() {
       const ps = ler(), total = r2(op.total()), s = soma(ps);
       aviso.hidden = !ps.length || s === total;
       aviso.textContent = `As parcelas somam ${brl(s)}, mas o valor total é ${brl(total)}.`;
-      el.querySelectorAll('[data-prazo]').forEach((b) => b.classList.toggle('on', !manual && b.dataset.prazo === campoPrazo.value));
+      el.querySelectorAll('[data-prazo]').forEach((b) => b.classList.toggle('on', !manual && (aDefinir ? b.dataset.prazo === 'definir' : b.dataset.prazo === campoPrazo.value)));
+      [...caixa.children].forEach((d) => d.classList.toggle('sem-data', !d.querySelector('.p-venc').value));
+      el.querySelector('.dica-definir').hidden = !ps.some((p) => !p.vencimento);
     }
     function gerar() {
+      if (aDefinir) {   // uma parcela com o valor todo e sem data
+        const a = ler()[0] || {};
+        caixa.innerHTML = '';
+        caixa.appendChild(linha({ vencimento: null, valor: r2(op.total()), pago: a.pago, pago_em: a.pago_em }));
+        manual = false; conferir(); return;
+      }
       const dias = (campoPrazo.value || '0').split(/[\/,\s-]+/).filter(Boolean).map(Number).filter((n) => !isNaN(n) && n >= 0);
       const lista = dias.length ? dias : [0], total = r2(op.total()), base = op.base() || hoje(), antigas = ler();
       const parte = r2(Math.floor(total / lista.length * 100) / 100);
@@ -123,10 +137,13 @@
       manual = false; conferir();
     }
 
-    el.querySelectorAll('[data-prazo]').forEach((b) => b.addEventListener('click', () => { campoPrazo.value = b.dataset.prazo; gerar(); }));
-    campoPrazo.addEventListener('input', gerar);
+    el.querySelectorAll('[data-prazo]').forEach((b) => b.addEventListener('click', () => {
+      aDefinir = b.dataset.prazo === 'definir';
+      campoPrazo.value = aDefinir ? '' : b.dataset.prazo; gerar();
+    }));
+    campoPrazo.addEventListener('input', () => { aDefinir = false; gerar(); });
     el.querySelector('.ed-add').addEventListener('click', () => {
-      const ps = ler(), ult = ps.length ? ps[ps.length - 1].vencimento : (op.base() || hoje());
+      const datas = ler().map((p) => p.vencimento).filter(Boolean), ult = datas.length ? datas[datas.length - 1] : (op.base() || hoje());
       caixa.appendChild(linha({ vencimento: somaDias(ult, 30), valor: 0 }));
       manual = true; conferir();
     });
@@ -143,10 +160,10 @@
     });
 
     return {
-      novo(prazo) { campoPrazo.value = prazo || '0'; gerar(); },
+      novo(prazo) { aDefinir = false; campoPrazo.value = prazo || '0'; gerar(); },
       carregar(ps) {
-        campoPrazo.value = ''; caixa.innerHTML = '';
-        ps.slice().sort((a, b) => (a.vencimento < b.vencimento ? -1 : 1)).forEach((p) => caixa.appendChild(linha(p)));
+        aDefinir = false; campoPrazo.value = ''; caixa.innerHTML = '';
+        ps.slice().sort(porVencimento).forEach((p) => caixa.appendChild(linha(p)));
         manual = true; conferir();
       },
       // chamado quando muda o valor total ou a data: refaz se ninguém mexeu nas parcelas à mão
@@ -155,7 +172,7 @@
       validar() {
         const ps = ler(), total = r2(op.total());
         if (!ps.length) return 'Defina pelo menos uma parcela.';
-        if (ps.some((p) => !p.vencimento)) return 'Toda parcela precisa de data.';
+        if (!op.aDefinir && ps.some((p) => !p.vencimento)) return 'Toda parcela precisa de data.';
         if (soma(ps) !== total) return `As parcelas somam ${brl(soma(ps))}, mas o valor total é ${brl(total)}. Ajuste os valores ou clique num prazo para refazer.`;
         return '';
       }

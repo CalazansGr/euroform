@@ -22,24 +22,26 @@
     return fixos.then(() => Promise.all([
       db.from('ordens').select('id, categoria, valor, nf_emitida, gastos(parcelas(valor))').gte('data', ini).lte('data', fim),
       db.from('parcelas').select('valor, ordem_id, gasto_id').eq('pago', true).gte('pago_em', ini).lte('pago_em', fim),
-      db.from('parcelas').select('valor, ordem_id, gasto_id').eq('pago', false).gte('vencimento', ini).lte('vencimento', fim)
+      db.from('parcelas').select('valor, ordem_id, gasto_id').eq('pago', false).gte('vencimento', ini).lte('vencimento', fim),
+      db.from('parcelas').select('valor').not('ordem_id', 'is', null).eq('pago', false).is('vencimento', null)
     ])).then((r) => {
       const e = r.find((x) => x.error); if (e) { alert('Erro ao carregar o painel: ' + e.error.message); return; }
-      const [ordens, pagas, abertas] = r.map((x) => x.data);
-      mostrarResumo(ordens, pagas, abertas);
+      const [ordens, pagas, abertas, semData] = r.map((x) => x.data);
+      mostrarResumo(ordens, pagas, abertas, soma(semData));
       mostrarTipos(ordens);
       mostrarSimples(ordens);
     });
   }
 
-  function mostrarResumo(ordens, pagas, abertas) {
+  function mostrarResumo(ordens, pagas, abertas, semData) {
     const faturamento = soma(ordens);
     const entrou = soma(pagas.filter((p) => p.ordem_id)), saiu = soma(pagas.filter((p) => p.gasto_id));
     const faltaReceber = soma(abertas.filter((p) => p.ordem_id)), faltaPagar = soma(abertas.filter((p) => p.gasto_id));
     const lucro = r2(entrou - saiu);
     $('p-cards').innerHTML =
       card('Faturamento', faturamento, `${ordens.length} ${ordens.length === 1 ? 'serviço feito' : 'serviços feitos'} no mês`) +
-      card('Entrou', entrou, faltaReceber ? `recebido dos clientes · falta receber ${brl(faltaReceber)} que vence no mês` : 'recebido dos clientes no mês', { cls: 'pos' }) +
+      card('Entrou', entrou, (faltaReceber ? `recebido dos clientes · falta receber ${brl(faltaReceber)} que vence no mês` : 'recebido dos clientes no mês') +
+        (semData ? `<br>+ ${brl(semData)} a receber com data a definir` : ''), { cls: 'pos' }) +
       card('Despesas pagas', saiu, faltaPagar ? `falta pagar ${brl(faltaPagar)} que vence no mês` : 'pagas no mês') +
       card('Lucro do mês', lucro, 'o que entrou − o que saiu', { dest: true, cls: lucro >= 0 ? 'pos' : 'neg' });
   }
