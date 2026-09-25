@@ -25,6 +25,7 @@
     <nav class="abas">
       <button type="button" class="aba ativa" data-aba="painel">Painel</button>
       <button type="button" class="aba" data-aba="servicos">Serviços (OS)</button>
+      <button type="button" class="aba" data-aba="receber">A receber</button>
       <button type="button" class="aba" data-aba="despesas">Despesas</button>
       <button type="button" class="aba" data-aba="fluxo">Fluxo de caixa</button>
     </nav>
@@ -32,6 +33,8 @@
     <button id="btn-exportar" type="button" class="btn-sec" title="Baixa uma planilha Excel com todos os dados (cópia de segurança)">Exportar backup</button>
     <button id="btn-sair" type="button" class="btn-sec">Sair</button>
   </header>
+
+  <p class="aviso aviso-banco" id="aviso-banco" hidden>⚠ Falta atualizar o banco de dados para as funções novas (situação do serviço, NF a emitir, data do recebimento). No Supabase, abra <b>SQL Editor</b>, cole o conteúdo do arquivo <b>migracao-recebimentos.sql</b> e clique em <b>Run</b>. Até lá, salvar OS pode dar erro.</p>
 
   <main class="conteudo" id="aba-painel">
     <div class="pagina-topo">
@@ -123,15 +126,55 @@
         <option value="">Com e sem NF</option>
         <option value="1">Só com NF</option>
         <option value="0">Só sem NF</option>
+        <option value="pend">NF a emitir</option>
+      </select>
+      <select id="filtro-status">
+        <option value="">Pendentes e realizados</option>
+        <option value="pendente">Só pendentes (a fazer)</option>
+        <option value="realizado">Só realizados</option>
+      </select>
+      <select id="filtro-rec">
+        <option value="">Pagos e a receber</option>
+        <option value="aberto">Falta receber</option>
+        <option value="atraso">Com parcela atrasada</option>
+        <option value="quitado">Quitados</option>
       </select>
     </div>
     <p class="resumo-lista" id="resumo-os"></p>
     <div class="tabela-wrap">
       <table class="tabela t-servicos">
-        <thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>NF</th><th class="num">Bruto</th><th class="num">Custo</th><th class="num">Lucro est.</th><th>Pagamento</th></tr></thead>
+        <thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>NF</th><th class="num">Bruto</th><th class="num">Custo</th><th class="num">Lucro est.</th><th>Recebimento</th></tr></thead>
         <tbody id="lista"></tbody>
       </table>
       <p class="vazio" id="vazio" hidden>Nenhuma OS encontrada.</p>
+    </div>
+  </main>
+
+  <main class="conteudo" id="aba-receber" hidden>
+    <div class="pagina-topo">
+      <div><h2 class="titulo">A receber</h2><p class="sub">Todas as parcelas dos clientes · marque <b>Sim</b> quando o dinheiro cair</p></div>
+    </div>
+    <div class="barra">
+      <input type="search" id="rc-busca" placeholder="Buscar cliente...">
+      <select id="rc-sit" aria-label="Situação">
+        <option value="aberto">Falta receber</option>
+        <option value="atraso">Só atrasadas</option>
+        <option value="pago">Já recebidas</option>
+        <option value="">Todas</option>
+      </select>
+      <input type="month" id="rc-mes" title="Mês do vencimento (opcional)" aria-label="Mês do vencimento">
+    </div>
+    <div class="cards cards-3">
+      <div class="card"><span>Falta receber</span><strong id="rc-aberto">R$ 0,00</strong><small id="rc-aberto-n"></small></div>
+      <div class="card"><span>Atrasado</span><strong id="rc-atraso" class="neg">R$ 0,00</strong><small id="rc-atraso-n"></small></div>
+      <div class="card"><span>Já recebido</span><strong id="rc-pago" class="pos">R$ 0,00</strong><small id="rc-pago-n"></small></div>
+    </div>
+    <div class="tabela-wrap">
+      <table class="tabela t-receber">
+        <thead><tr><th>Cliente / serviço</th><th>Parcela</th><th>Vencimento</th><th class="num">Valor</th><th>Recebido?</th><th>Recebido em</th></tr></thead>
+        <tbody id="rc-lista"></tbody>
+      </table>
+      <p class="vazio" id="rc-vazio" hidden>Nenhuma parcela neste filtro.</p>
     </div>
   </main>
 
@@ -235,6 +278,14 @@
         <label><input type="radio" name="nf" value="1"><span>Com nota fiscal</span></label>
       </div>
       <small>Vale para pessoa física e jurídica. Com NF, desconta 10,5% de Simples.</small>
+      <div class="nf-emissao" id="nf-emissao" hidden>
+        <div class="seg" role="group" aria-label="NF já emitida?">
+          <label><input type="radio" name="nfe" value="0" checked><span>NF ainda não emitida</span></label>
+          <label><input type="radio" name="nfe" value="1"><span>NF já emitida</span></label>
+        </div>
+        <label id="nf-data-campo" hidden><span>Emitida em</span><input type="date" id="f-nf-data"></label>
+        <label><span>Nº da NF (opcional)</span><input id="f-nf-num" inputmode="numeric"></label>
+      </div>
     </div>
 
     <fieldset>
@@ -260,7 +311,14 @@
             <option value="venda">Venda de cadeiras</option>
             <option value="revestimento">Revestimento / Reforma</option>
           </select></label>
-        <label><span>Data de realização</span><input type="date" id="f-data" required></label>
+        <label><span id="lbl-data">Data de realização</span><input type="date" id="f-data" required></label>
+      </div>
+      <div class="linha-seg">
+        <span>Situação</span>
+        <div class="seg" role="group" aria-label="Situação do serviço">
+          <label><input type="radio" name="status" value="pendente"><span>Pendente (a fazer)</span></label>
+          <label><input type="radio" name="status" value="realizado" checked><span>Realizado</span></label>
+        </div>
       </div>
     </fieldset>
 
@@ -299,6 +357,7 @@
         <button type="button" class="btn-sec" data-prazo="60/90">60/90</button>
         <button type="button" id="btn-gerar">Gerar parcelas</button>
       </div>
+      <p class="dica" id="base-prazo"></p>
       <div id="parcelas" class="parcelas"></div>
       <button type="button" class="btn-sec" id="btn-add-parcela">+ Adicionar parcela</button>
       <p class="aviso" id="aviso-parcelas" hidden></p>
@@ -322,6 +381,7 @@
 <script src="despesas.js"></script>
 <script src="painel.js"></script>
 <script src="fluxo.js"></script>
+<script src="receber.js"></script>
 <script src="backup.js"></script>
 </body>
 </html>

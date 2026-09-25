@@ -226,3 +226,55 @@ input:focus,select:focus,textarea:focus{border-color:var(--acento)}
 .acoes-parc{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 #x-parc-box{margin-top:6px}
 #x-parc-box .parcelas{margin-top:8px}
+
+/* ===== NF a emitir, situação do serviço, A receber ===== */
+.tag.pendente{background:#e8e4ff;color:#3d2a9e}
+.tag.alerta-tag{background:#fff0c2;color:#7a5a00}
+.aviso-banco{max-width:1100px;margin:16px auto 0;font-size:14px}
+.nf-emissao{flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px;padding-top:10px;border-top:1px dashed #ffd66b}
+.nf-emissao label:not(.seg label){font-size:13px}
+.nf-emissao input[type=date],.nf-emissao input:not([type]){height:42px}
+.linha-seg{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.linha-seg>span{font-weight:600;font-size:14px}
+.dica{margin:0;font-size:13px;color:#555}
+#parcelas .parcela{grid-template-columns:1fr 1fr auto 150px auto}
+#parcelas .parcela .p-pagoem{visibility:hidden;padding:8px}
+#parcelas .parcela.recebida .p-pagoem{visibility:visible}
+#parcelas .parcela.recebida{background:#effaf3;border-radius:8px}
+@media(max-width:520px){
+  #parcelas .parcela{grid-template-columns:1fr 1fr auto;grid-template-areas:"v val del" "lbl em em";padding:6px 0;border-bottom:1px solid var(--borda)}
+  #parcelas .p-venc{grid-area:v}#parcelas .p-valor{grid-area:val}#parcelas .p-del{grid-area:del}
+  #parcelas .p-lbl{grid-area:lbl}#parcelas .p-pagoem{grid-area:em}
+  #parcelas .parcela:not(.recebida) .p-pagoem{display:none}
+}
+.link{background:none;padding:0;border:0;font:inherit;font-weight:700;color:var(--texto);text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:#ccc;text-underline-offset:3px}
+.link:hover{background:none;text-decoration-color:var(--acento)}
+.sn{display:inline-flex;border:1px solid var(--borda);border-radius:8px;overflow:hidden}
+.sn button{background:#fff;border-radius:0;padding:7px 14px;font-size:14px;font-weight:700;color:#999}
+.sn button:hover{background:#f4f4f4}
+.sn .sn-nao.on{background:#eee;color:#333}
+.sn .sn-sim.on{background:#1f9d55;color:#fff}
+.t-receber td{vertical-align:middle}
+.t-receber .rc-cli small{display:block;color:#777;font-size:12px;margin-top:2px;white-space:normal}
+.t-receber input[type=date]{padding:6px 8px;font-size:14px}
+.t-receber .rc-vcel small{display:block;font-size:12px;margin-top:3px}
+.t-receber .aviso-txt{color:#8a5a00;font-weight:700}
+.t-receber tr.rc-atrasada{background:#fff5f6}
+.t-receber tr.rc-paga td{color:#666}
+.rc-traco{color:#bbb}
+@media(max-width:640px){
+  .t-receber tbody tr{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center}
+  .t-receber td{display:block;padding:0;text-align:left}
+  .t-receber td::before{display:none}
+  .t-receber td:nth-child(1){grid-column:1;grid-row:1}
+  .t-receber td:nth-child(4){grid-column:2;grid-row:1;text-align:right}
+  .t-receber td:nth-child(3){grid-column:1;grid-row:2}
+  .t-receber td:nth-child(2){grid-column:2;grid-row:2;text-align:right;color:#777;font-size:13px}
+  .t-receber td:nth-child(2)::before{display:inline;content:"Parcela ";font-weight:400}
+  .t-receber td:nth-child(5){grid-column:1;grid-row:3}
+  .t-receber td:nth-child(6){grid-column:2;grid-row:3;text-align:right}
+  .t-receber td:nth-child(6):has(.rc-traco){visibility:hidden}
+  .sn button{min-height:40px;padding:0 18px}
+  .nf-emissao>*{flex:1 1 100%}
+}
+.parcela input[type=date],.parcela input[type=number]{min-width:0;width:100%}

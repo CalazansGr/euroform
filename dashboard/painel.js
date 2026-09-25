@@ -16,7 +16,7 @@
     return E.garantirMes(mes).catch(function () {}).then(function () {
       var av = E.textoAvisoSimples(); $('p-aviso').textContent = '⚠ ' + av; $('p-aviso').hidden = !av;
       return Promise.all([
-        db.from('servicos').select('valor_bruto,com_nf,custo_total,imposto').gte('data_servico', f[0]).lte('data_servico', f[1]),
+        db.from('servicos').select('valor_bruto,com_nf,custo_total,imposto,status').gte('data_servico', f[0]).lte('data_servico', f[1]),
         db.from('despesas').select('tipo,valor,pago').gte('vencimento', f[0]).lte('vencimento', f[1]),
         db.from('recebimentos').select('*, servicos(clientes(nome))').eq('pago', false).lte('vencimento', lim).order('vencimento'),
         db.from('despesas').select('*').eq('pago', false).lte('vencimento', lim).order('vencimento'),
@@ -25,7 +25,10 @@
       ]);
     }).then(function (r) {
       for (var i = 0; i < 6; i++) if (r[i].error) { alert('Erro ao carregar painel: ' + r[i].error.message); return; }
-      var os = r[0].data, desp = r[1].data, recMes = r[4].data;
+      // serviço pendente (ainda a fazer) não conta como faturado no mês
+      var pendentes = r[0].data.filter(function (s) { return s.status === 'pendente'; });
+      var os = r[0].data.filter(function (s) { return s.status !== 'pendente'; }), desp = r[1].data, recMes = r[4].data;
+      var valPend = soma(pendentes, function (s) { return s.valor_bruto; });
       var comNF = soma(os.filter(function (s) { return s.com_nf; }), function (s) { return s.valor_bruto; });
       var semNF = soma(os.filter(function (s) { return !s.com_nf; }), function (s) { return s.valor_bruto; });
       var custos = soma(os, function (s) { return s.custo_total; });
@@ -39,7 +42,8 @@
       var faltaPag = soma(desp.filter(function (d) { return !d.pago; }), function (d) { return d.valor; });
 
       $('p-cards').innerHTML =
-        card('Faturado', r2(comNF + semNF), 'Com NF ' + brl(comNF) + '<br>Sem NF ' + brl(semNF)) +
+        card('Faturado', r2(comNF + semNF), 'Com NF ' + brl(comNF) + '<br>Sem NF ' + brl(semNF) +
+          (pendentes.length ? '<br>+ ' + brl(valPend) + ' em ' + pendentes.length + ' serviço(s) pendente(s), fora da conta' : '')) +
         card('Lucro líquido', resultado, 'Depois de custos, Simples e despesas fixas', true, resultado >= 0 ? 'pos' : 'neg') +
         card('Falta receber no mês', faltaRec, 'de ' + brl(totRec) + ' previstos no mês') +
         card('Falta pagar no mês', faltaPag, 'de ' + brl(totDesp) + ' em despesas no mês');
@@ -84,7 +88,8 @@
     if (chip) { $('p-mes').value = chip.dataset.mes; carregarPainel(); return; }
     var b = ev.target.closest('button[data-tab]'); if (!b) return;
     b.disabled = true;
-    db.from(b.dataset.tab).update({ pago: true }).eq('id', b.dataset.id).then(function (r) {
+    var campos = b.dataset.tab === 'recebimentos' ? { pago: true, pago_em: E.hoje() } : { pago: true };
+    db.from(b.dataset.tab).update(campos).eq('id', b.dataset.id).then(function (r) {
       if (r.error) { alert('Erro: ' + r.error.message); b.disabled = false; return; }
       carregarPainel();
     });

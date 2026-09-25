@@ -20,6 +20,8 @@ create table servicos (
   imposto numeric(12,2) not null default 0,
   condicao_pagamento text,                     -- 'avista','30','30/60'...
   observacoes text,
+  status text not null default 'realizado' check (status in ('pendente','realizado')),
+  nf_emitida_em date,                          -- vazio = NF ainda não emitida
   criado_em timestamptz not null default now()
 );
 
@@ -28,7 +30,8 @@ create table recebimentos (
   servico_id uuid not null references servicos(id) on delete cascade,
   vencimento date not null,
   valor numeric(12,2) not null,
-  pago boolean not null default false
+  pago boolean not null default false,
+  pago_em date                                 -- dia em que o cliente pagou
 );
 
 create table despesas (

@@ -43,13 +43,14 @@
       var abas = {
         'Serviços': r[1].map(function (s) {
           return { 'Data': s.data_servico, 'Cliente': s.clientes ? s.clientes.nome : '', 'Tipo': s.clientes ? s.clientes.tipo : '', 'Categoria': CATS[s.categoria] || s.categoria,
-            'Com NF': sim(s.com_nf), 'Preço cobrado': Number(s.valor_bruto), 'Custo': Number(s.custo_total), 'Simples (10,5%)': Number(s.imposto),
+            'Situação': s.status === 'pendente' ? 'Pendente' : 'Realizado',
+            'Com NF': sim(s.com_nf), 'NF emitida em': s.nf_emitida_em || (s.com_nf ? 'a emitir' : ''), 'Nº NF': (s.detalhes && s.detalhes.nf_numero) || '', 'Preço cobrado': Number(s.valor_bruto), 'Custo': Number(s.custo_total), 'Simples (10,5%)': Number(s.imposto),
             'Lucro estimado': Math.round((Number(s.valor_bruto) - Number(s.custo_total) - Number(s.imposto)) * 100) / 100,
             'Forma de pagamento': (s.detalhes && FORMAS[s.detalhes.forma]) || '', 'Prazo (dias)': s.condicao_pagamento || '', 'Observações': s.observacoes || '' };
         }),
         'Recebimentos': r[2].map(function (x) {
           return { 'Vencimento': x.vencimento, 'Cliente': x.servicos && x.servicos.clientes ? x.servicos.clientes.nome : '', 'Data do serviço': x.servicos ? x.servicos.data_servico : '',
-            'Valor': Number(x.valor), 'Recebido': sim(x.pago) };
+            'Valor': Number(x.valor), 'Recebido': sim(x.pago), 'Recebido em': x.pago_em || '' };
         }),
         'Despesas': r[3].map(function (d) {
           return { 'Vencimento': d.vencimento, 'Descrição': d.descricao, 'Fornecedor': d.fornecedor || '', 'Tipo': TIPOS[d.tipo] || d.tipo, 'Valor': Number(d.valor), 'Paga': sim(d.pago),

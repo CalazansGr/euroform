@@ -42,7 +42,7 @@
     $('app').hidden = !logado;
     if (logado) {
       $('usuario').textContent = session.user.email;
-      if (!estado.logado) { estado.logado = true; carregar(); if (EF.abas.painel) EF.abas.painel(); }
+      if (!estado.logado) { estado.logado = true; checarBanco(); carregar(); if (EF.abas.painel) EF.abas.painel(); }
     } else { estado.logado = false; }
   }
   db.auth.getSession().then(function (r) { render(r.data.session); });
@@ -91,20 +91,60 @@
       estado.clientes = r[1].data;
       $('lista-clientes').innerHTML = estado.clientes.map(function (c) { return '<option value="' + esc(c.nome) + '">'; }).join('');
       listar();
+      if (EF.aoCarregarOS) EF.aoCarregarOS();
+    });
+  }
+  // Colunas novas (situação, emissão da NF, data do recebimento): avisa se o banco ainda não foi atualizado.
+  function checarBanco() {
+    Promise.all([
+      db.from('servicos').select('status,nf_emitida_em').limit(1),
+      db.from('recebimentos').select('pago_em').limit(1)
+    ]).then(function (r) {
+      $('aviso-banco').hidden = !r.some(function (x) { return x.error; });
     });
   }
 
   function prazoTxt(forma, prazo) { return (forma + ' ' + (prazo === '0' ? 'à vista' : (prazo || ''))).trim(); }
   EF.prazoTxt = prazoTxt;
   function lucroDe(s) { return r2(Number(s.valor_bruto) - Number(s.custo_total) - Number(s.imposto)); }
+  function nfPendente(s) { return s.com_nf && !s.nf_emitida_em; }
+  function nfTag(s) {
+    if (!s.com_nf) return '<span class="tag">Sem NF</span>';
+    return s.nf_emitida_em ? '<span class="tag nf">Com NF</span>' : '<span class="tag alerta-tag">NF a emitir</span>';
+  }
+  // resumo das parcelas de recebimento de uma OS
+  function recInfo(s) {
+    var rec = s.recebimentos || [], h = hoje(), i = { n: rec.length, pagas: 0, recebido: 0, aberto: 0, atrasadas: 0 };
+    rec.forEach(function (p) {
+      if (p.pago) { i.pagas++; i.recebido += Number(p.valor); }
+      else { i.aberto += Number(p.valor); if (p.vencimento < h) i.atrasadas++; }
+    });
+    i.recebido = r2(i.recebido); i.aberto = r2(i.aberto);
+    return i;
+  }
+  function recTag(i) {
+    if (!i.n) return '';
+    if (!i.aberto) return '<span class="tag pago">Quitado</span>';
+    if (i.atrasadas) return '<span class="tag atraso">' + i.atrasadas + (i.atrasadas > 1 ? ' atrasadas' : ' atrasada') + '</span>';
+    return '<span class="tag">' + (i.pagas ? 'Recebido ' + i.pagas + ' de ' + i.n : 'A receber') + '</span>';
+  }
+  EF.nfTag = nfTag; EF.recInfo = recInfo; EF.CATS = CATS;
 
   function listar() {
     var q = $('busca').value.trim().toLowerCase();
-    var cat = $('filtro-cat').value, nf = $('filtro-nf').value;
+    var cat = $('filtro-cat').value, nf = $('filtro-nf').value, stt = $('filtro-status').value, fr = $('filtro-rec').value;
     var itens = estado.servicos.filter(function (s) {
       if (cat && s.categoria !== cat) return false;
       if ($('filtro-mes').value && s.data_servico.slice(0, 7) !== $('filtro-mes').value) return false;
-      if (nf !== '' && String(s.com_nf ? 1 : 0) !== nf) return false;
+      if (nf === 'pend') { if (!nfPendente(s)) return false; }
+      else if (nf !== '' && String(s.com_nf ? 1 : 0) !== nf) return false;
+      if (stt && (s.status || 'realizado') !== stt) return false;
+      if (fr) {
+        var ri = recInfo(s);
+        if (fr === 'aberto' && !ri.aberto) return false;
+        if (fr === 'atraso' && !ri.atrasadas) return false;
+        if (fr === 'quitado' && (!ri.n || ri.aberto)) return false;
+      }
       if (q) {
         var txt = ((s.clientes ? s.clientes.nome : '') + ' ' + (s.observacoes || '')).toLowerCase();
         if (txt.indexOf(q) < 0) return false;
@@ -112,23 +152,24 @@
       return true;
     });
     $('vazio').hidden = itens.length > 0;
-    var tb = 0, tl = 0;
-    itens.forEach(function (s) { tb += Number(s.valor_bruto); tl += lucroDe(s); });
-    $('resumo-os').innerHTML = itens.length ? '<strong>' + itens.length + '</strong> OS · faturado <strong>' + brl(r2(tb)) + '</strong> · lucro estimado <strong class="' + (tl >= 0 ? 'pos' : 'neg') + '">' + brl(r2(tl)) + '</strong>' : '';
+    var tb = 0, tl = 0, ta = 0;
+    itens.forEach(function (s) { tb += Number(s.valor_bruto); tl += lucroDe(s); ta += recInfo(s).aberto; });
+    $('resumo-os').innerHTML = itens.length ? '<strong>' + itens.length + '</strong> OS · total <strong>' + brl(r2(tb)) + '</strong> · lucro estimado <strong class="' + (tl >= 0 ? 'pos' : 'neg') + '">' + brl(r2(tl)) + '</strong>' +
+      (ta ? ' · falta receber <strong>' + brl(r2(ta)) + '</strong>' : '') : '';
     $('lista').innerHTML = itens.map(function (s) {
       var l = lucroDe(s);
       var forma = (s.detalhes && FORMAS[s.detalhes.forma]) || '';
       return '<tr data-id="' + s.id + '"><td>' + dataBR(s.data_servico) + '</td>' +
         '<td>' + esc(s.clientes ? s.clientes.nome : '—') + ' <small>' + esc(s.clientes ? s.clientes.tipo : '') + '</small></td>' +
-        '<td>' + CATS[s.categoria] + '</td>' +
-        '<td>' + (s.com_nf ? '<span class="tag nf">Com NF</span>' : '<span class="tag">Sem NF</span>') + '</td>' +
+        '<td>' + CATS[s.categoria] + (s.status === 'pendente' ? ' <span class="tag pendente">Pendente</span>' : '') + '</td>' +
+        '<td>' + nfTag(s) + '</td>' +
         '<td class="num">' + brl(Number(s.valor_bruto)) + '</td>' +
         '<td class="num">' + brl(Number(s.custo_total)) + '</td>' +
         '<td class="num ' + (l >= 0 ? 'pos' : 'neg') + '">' + brl(l) + '</td>' +
-        '<td>' + esc(prazoTxt(forma, s.condicao_pagamento)) + '</td></tr>';
+        '<td>' + esc(prazoTxt(forma, s.condicao_pagamento)) + ' ' + recTag(recInfo(s)) + '</td></tr>';
     }).join('');
   }
-  ['busca', 'filtro-mes', 'filtro-cat', 'filtro-nf'].forEach(function (id) { $(id).addEventListener('input', listar); });
+  ['busca', 'filtro-mes', 'filtro-cat', 'filtro-nf', 'filtro-status', 'filtro-rec'].forEach(function (id) { $(id).addEventListener('input', listar); });
   $('lista').addEventListener('click', function (ev) {
     var tr = ev.target.closest('tr'); if (!tr) return;
     abrirForm(estado.servicos.find(function (s) { return s.id === tr.dataset.id; }));
@@ -155,23 +196,51 @@
     $('r-lucro').className = lucro >= 0 ? 'pos' : 'neg';
     avisoParcelas();
   }
+  function nfEmitida() { return radio('nf') === '1' && radio('nfe') === '1'; }
+  // Os prazos (30/60/90) contam da emissão da NF, se já saiu; senão, da data do serviço.
+  function dataBase() { return (nfEmitida() && $('f-nf-data').value) || $('f-data').value || hoje(); }
+  function basePrazo() {
+    var daNF = nfEmitida() && $('f-nf-data').value;
+    var t = 'Os prazos contam a partir de ' + dataBR(dataBase()) + (daNF ? ' (emissão da NF).' : ' (data do serviço).');
+    if (radio('nf') === '1' && !nfEmitida()) t += ' Quando a NF sair, marque "NF já emitida" e clique em "Gerar parcelas" para recontar a partir dela.';
+    $('base-prazo').textContent = t;
+  }
+  function atualizarNF() {
+    var emitida = nfEmitida();
+    $('nf-emissao').hidden = radio('nf') !== '1';
+    $('nf-data-campo').hidden = !emitida;
+    $('f-nf-data').required = emitida;
+    if (emitida && !$('f-nf-data').value) $('f-nf-data').value = hoje();
+    basePrazo();
+  }
+  function atualizarStatus() {
+    $('lbl-data').textContent = radio('status') === 'pendente' ? 'Data prevista' : 'Data de realização';
+  }
   document.querySelectorAll('input[name=tipo]').forEach(function (r) { r.addEventListener('change', atualizarTipo); });
   ['f-bruto', 'f-custo'].forEach(function (id) { $(id).addEventListener('input', recalcular); });
-  document.querySelectorAll('input[name=nf]').forEach(function (r) { r.addEventListener('change', recalcular); });
+  document.querySelectorAll('input[name=nf]').forEach(function (r) { r.addEventListener('change', function () { atualizarNF(); recalcular(); }); });
+  document.querySelectorAll('input[name=nfe]').forEach(function (r) { r.addEventListener('change', atualizarNF); });
+  document.querySelectorAll('input[name=status]').forEach(function (r) { r.addEventListener('change', atualizarStatus); });
+  ['f-data', 'f-nf-data'].forEach(function (id) { $(id).addEventListener('input', basePrazo); });
 
   // --- parcelas editáveis ---
   function linhaParcela(p) {
     var d = document.createElement('div'); d.className = 'parcela';
-    d.innerHTML = '<input type="date" class="p-venc" required><input type="number" class="p-valor" min="0" step="0.01" inputmode="decimal" required>' +
-      '<label><input type="checkbox" class="p-pago"> Recebido</label><button type="button" class="btn-perigo p-del" aria-label="Remover parcela">✕</button>';
+    d.innerHTML = '<input type="date" class="p-venc" required aria-label="Vencimento"><input type="number" class="p-valor" min="0" step="0.01" inputmode="decimal" required aria-label="Valor">' +
+      '<label class="p-lbl"><input type="checkbox" class="p-pago"> Recebido</label><input type="date" class="p-pagoem" aria-label="Recebido em" title="Dia em que o cliente pagou">' +
+      '<button type="button" class="btn-perigo p-del" aria-label="Remover parcela">✕</button>';
     d.querySelector('.p-venc').value = p.vencimento || '';
     d.querySelector('.p-valor').value = p.valor;
     d.querySelector('.p-pago').checked = !!p.pago;
+    d.querySelector('.p-pagoem').value = p.pago ? (p.pago_em || '') : '';
+    d.classList.toggle('recebida', !!p.pago);
     return d;
   }
   function lerParcelas() {
     return Array.prototype.map.call($('parcelas').children, function (d) {
-      return { vencimento: d.querySelector('.p-venc').value, valor: r2(parseFloat(d.querySelector('.p-valor').value) || 0), pago: d.querySelector('.p-pago').checked };
+      var pago = d.querySelector('.p-pago').checked;
+      return { vencimento: d.querySelector('.p-venc').value, valor: r2(parseFloat(d.querySelector('.p-valor').value) || 0), pago: pago,
+        pago_em: pago ? (d.querySelector('.p-pagoem').value || hoje()) : null };
     });
   }
   function avisoParcelas() {
@@ -183,11 +252,13 @@
     var txt = $('f-prazos').value.trim() || '0';
     var prazos = txt.split(/[\/,\s-]+/).filter(Boolean).map(Number).filter(function (n) { return !isNaN(n) && n >= 0; });
     if (!prazos.length) prazos = [0];
-    var total = num('f-bruto'), base = r2(total / prazos.length), soma = 0, data = $('f-data').value || hoje();
+    var total = num('f-bruto'), base = r2(total / prazos.length), soma = 0, data = dataBase();
+    var antigas = lerParcelas();   // quem já estava marcado como recebido continua recebido
     $('parcelas').innerHTML = '';
     prazos.forEach(function (p, i) {
-      var v = i === prazos.length - 1 ? r2(total - soma) : base; soma += v;
-      $('parcelas').appendChild(linhaParcela({ vencimento: somaDias(data, p), valor: v, pago: false }));
+      var v = i === prazos.length - 1 ? r2(total - soma) : base; soma = r2(soma + v);
+      var a = antigas[i] || {};
+      $('parcelas').appendChild(linhaParcela({ vencimento: somaDias(data, p), valor: v, pago: !!a.pago, pago_em: a.pago_em }));
     });
     avisoParcelas();
   }
@@ -202,12 +273,18 @@
     if (ev.target.classList.contains('p-del')) { ev.target.closest('.parcela').remove(); avisoParcelas(); }
   });
   $('parcelas').addEventListener('input', avisoParcelas);
+  $('parcelas').addEventListener('change', function (ev) {
+    if (!ev.target.classList.contains('p-pago')) return;
+    var linha = ev.target.closest('.parcela'), em = linha.querySelector('.p-pagoem');
+    linha.classList.toggle('recebida', ev.target.checked);
+    em.value = ev.target.checked ? (em.value || hoje()) : '';
+  });
 
   function limpar() {
     $('form-os').reset();
     $('f-data').value = hoje();
     $('parcelas').innerHTML = '';
-    setRadio('tipo', 'PF'); setRadio('nf', '0');
+    setRadio('tipo', 'PF'); setRadio('nf', '0'); setRadio('nfe', '0'); setRadio('status', 'realizado');
     mostrarErro($('os-erro'), '');
   }
 
@@ -224,7 +301,7 @@
         var partes = ['Excluir esta OS remove ' + rec.length + ' parcela(s) de recebimento' + (recebido ? ' (' + brl(recebido) + ' já marcado como recebido)' : '')];
         if (abertas.length) partes.push(abertas.length + ' despesa(s) em aberto ligada(s) a ela');
         if (pagas) partes.push('(' + pagas + ' despesa(s) já paga(s) ficam no histórico)');
-        if (s.com_nf) partes.push('e o Simples do mês seguinte é recalculado');
+        if (s.com_nf && s.nf_emitida_em) partes.push('e o Simples do mês seguinte é recalculado');
         $('os-info-excluir').textContent = partes.join(', ').replace(', (', ' (').replace(', e o', ' e o') + '.';
         $('os-info-excluir').hidden = false;
       });
@@ -235,21 +312,27 @@
       $('f-cat').value = s.categoria;
       $('f-data').value = s.data_servico;
       setRadio('nf', s.com_nf ? '1' : '0');
+      setRadio('nfe', s.nf_emitida_em ? '1' : '0');
+      $('f-nf-data').value = s.nf_emitida_em || '';
+      $('f-nf-num').value = d.nf_numero || '';
+      setRadio('status', s.status || 'realizado');
       $('f-bruto').value = s.valor_bruto;
       $('f-custo').value = s.custo_total;
       $('f-forma').value = d.forma || 'pix';
       $('f-prazos').value = s.condicao_pagamento || '';
       $('f-obs').value = s.observacoes || '';
       (s.recebimentos || []).slice().sort(function (a, b) { return a.vencimento < b.vencimento ? -1 : 1; })
-        .forEach(function (p) { $('parcelas').appendChild(linhaParcela({ vencimento: p.vencimento, valor: Number(p.valor), pago: p.pago })); });
+        .forEach(function (p) { $('parcelas').appendChild(linhaParcela({ vencimento: p.vencimento, valor: Number(p.valor), pago: p.pago, pago_em: p.pago_em })); });
     } else {
       $('f-prazos').value = '0';
     }
-    atualizarTipo(); recalcular();
+    atualizarTipo(); atualizarNF(); atualizarStatus(); recalcular();
     dlg.showModal();
     if (!s) $('f-nome').focus();
   }
   $('btn-nova').addEventListener('click', function () { abrirForm(null); });
+  EF.abrirOS = abrirForm; EF.carregarOS = carregar;
+  EF.abas.servicos = listar;   // reflete na hora o que foi marcado como recebido em outra aba
   $('btn-cancelar').addEventListener('click', function () { dlg.close(); });
 
   function obterCliente(tipo, nome, doc) {
@@ -268,12 +351,14 @@
   $('form-os').addEventListener('submit', function (ev) {
     ev.preventDefault();
     mostrarErro($('os-erro'), '');
-    var comNF = radio('nf') === '1', bruto = num('f-bruto');
+    var comNF = radio('nf') === '1', bruto = num('f-bruto'), emitida = nfEmitida();
+    var ant = estado.editando ? estado.editando.detalhes || {} : {};
     var nome = $('f-nome').value.trim().replace(/\s+/g, ' ');
     var reg = {
       categoria: $('f-cat').value, data_servico: $('f-data').value,
-      detalhes: { forma: $('f-forma').value },
+      detalhes: Object.assign({}, ant, { forma: $('f-forma').value, nf_numero: comNF ? ($('f-nf-num').value.trim() || null) : null }),
       com_nf: comNF, valor_nf: comNF ? bruto : null, valor_bruto: bruto,
+      status: radio('status'), nf_emitida_em: emitida ? $('f-nf-data').value : null,
       custo_total: num('f-custo'), imposto: comNF ? r2(bruto * ALIQ) : 0,
       condicao_pagamento: $('f-prazos').value.trim() || null, observacoes: $('f-obs').value.trim() || null
     };
@@ -299,7 +384,7 @@
         if (a.error) throw a.error;
         if (!linhas.length) return { error: null };
         return db.from('recebimentos').insert(linhas.map(function (p) {
-          return { servico_id: id, vencimento: p.vencimento, valor: p.valor, pago: p.pago };
+          return { servico_id: id, vencimento: p.vencimento, valor: p.valor, pago: p.pago, pago_em: p.pago_em };
         }));
       }).then(function (i) { if (i && i.error) throw i.error; });
     }).then(function () {

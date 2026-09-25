@@ -30,15 +30,15 @@
   }
   function checar(rs) { (rs || []).forEach(function (x) { if (x && x.error) throw x.error; }); }
 
-  // O Simples de cada mês é SEMPRE calculado a partir das OS com NF do mês anterior.
+  // O Simples de cada mês é SEMPRE calculado a partir das NFs EMITIDAS no mês anterior (OS com NF ainda não emitida não entra).
   // Cria, atualiza ou remove a linha (se ainda não paga) para nunca ficar valor "fantasma".
   function reconciliarSimples() {
     return Promise.all([
-      pagina('servicos', 'valor_nf,data_servico', function (q) { return q.eq('com_nf', true); }),
+      pagina('servicos', 'valor_nf,nf_emitida_em', function (q) { return q.eq('com_nf', true).not('nf_emitida_em', 'is', null); }),
       pagina('despesas', '*', function (q) { return q.eq('tipo', 'imposto').like('descricao', MARCA_SIMPLES + '%'); })
     ]).then(function (r) {
       var esperado = {}, linhas = {}, meses = {}, avisos = [], ops = [];
-      r[0].forEach(function (s) { var m = mesMais(s.data_servico.slice(0, 7), 1); esperado[m] = (esperado[m] || 0) + Number(s.valor_nf || 0); meses[m] = 1; });
+      r[0].forEach(function (s) { var m = mesMais(s.nf_emitida_em.slice(0, 7), 1); esperado[m] = (esperado[m] || 0) + Number(s.valor_nf || 0); meses[m] = 1; });
       r[1].forEach(function (d) { var m = d.vencimento.slice(0, 7); (linhas[m] = linhas[m] || []).push(d); meses[m] = 1; });
       var limite = mesMais(mesAtual(), 1);
       Object.keys(meses).forEach(function (m) {
