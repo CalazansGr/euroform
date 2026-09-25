@@ -35,6 +35,17 @@
   <main class="conteudo" id="aba-painel">
     <div class="barra"><input type="month" id="p-mes"></div>
     <div class="cards" id="p-cards"></div>
+    <h3>Quanto vou receber neste mês</h3>
+    <div class="cards" id="p-rec-cards"></div>
+    <div class="tabela-wrap" style="margin-bottom:16px">
+      <table class="tabela">
+        <thead><tr><th>Vencimento</th><th>Cliente</th><th>Forma / prazo</th><th class="num">Valor</th><th>Situação</th></tr></thead>
+        <tbody id="p-rec-lista"></tbody>
+      </table>
+      <p class="vazio" id="p-rec-vazio" hidden>Nenhum recebimento previsto neste mês.</p>
+    </div>
+    <h3>Previsão de recebimentos por mês</h3>
+    <div class="cards" id="p-rec-meses"></div>
     <div class="duas-col">
       <section><h3>A receber <small>(atrasadas e próximos 7 dias)</small></h3><div id="p-receber" class="lista-pend"></div></section>
       <section><h3>A pagar <small>(atrasadas e próximos 7 dias)</small></h3><div id="p-pagar" class="lista-pend"></div></section>

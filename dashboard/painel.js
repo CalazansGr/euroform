@@ -14,10 +14,12 @@
         db.from('servicos').select('valor_bruto,com_nf,custo_total,imposto').gte('data_servico', f[0]).lte('data_servico', f[1]),
         db.from('despesas').select('tipo,valor,pago').gte('vencimento', f[0]).lte('vencimento', f[1]),
         db.from('recebimentos').select('*, servicos(clientes(nome))').eq('pago', false).lte('vencimento', lim).order('vencimento'),
-        db.from('despesas').select('*').eq('pago', false).lte('vencimento', lim).order('vencimento')
+        db.from('despesas').select('*').eq('pago', false).lte('vencimento', lim).order('vencimento'),
+        db.from('recebimentos').select('*, servicos(condicao_pagamento, detalhes, clientes(nome))').gte('vencimento', f[0]).lte('vencimento', f[1]).order('vencimento'),
+        db.from('recebimentos').select('vencimento,valor,pago').gte('vencimento', E.mesAtual() + '-01').lte('vencimento', E.faixa(E.mesMais(E.mesAtual(), 5))[1])
       ]);
     }).then(function (r) {
-      for (var i = 0; i < 4; i++) if (r[i].error) { alert('Erro ao carregar painel: ' + r[i].error.message); return; }
+      for (var i = 0; i < 6; i++) if (r[i].error) { alert('Erro ao carregar painel: ' + r[i].error.message); return; }
       var os = r[0].data, desp = r[1].data;
       var comNF = soma(os.filter(function (s) { return s.com_nf; }), function (s) { return s.valor_bruto; });
       var semNF = soma(os.filter(function (s) { return !s.com_nf; }), function (s) { return s.valor_bruto; });
@@ -33,6 +35,26 @@
         card('Lucro dos serviços', lucroOS, 'Faturado − custos − Simples', false, lucroOS >= 0 ? 'pos' : 'neg') +
         card('Despesas fixas do mês', fixas, 'Salários, aluguel, etc.') +
         card('Lucro líquido do mês', resultado, 'Lucro dos serviços − despesas fixas', true, resultado >= 0 ? 'pos' : 'neg');
+
+      var recMes = r[4].data, totRec = soma(recMes, function (x) { return x.valor; });
+      var jaRec = soma(recMes.filter(function (x) { return x.pago; }), function (x) { return x.valor; });
+      $('p-rec-cards').innerHTML = card('Total a receber no mês', totRec, recMes.length + ' parcela(s)', true) + card('Já recebido', jaRec, '', false, 'pos') + card('Falta receber', r2(totRec - jaRec), '', false, 'neg');
+      $('p-rec-vazio').hidden = recMes.length > 0;
+      var FORMAS = { pix: 'PIX', boleto: 'Boleto', ted: 'TED', cartao: 'Cartão', empenho: 'Empenho', dinheiro: 'Dinheiro', outro: 'Outro' };
+      $('p-rec-lista').innerHTML = recMes.map(function (x) {
+        var s = x.servicos || {}, cli = s.clientes ? s.clientes.nome : 'Cliente';
+        var forma = (s.detalhes && FORMAS[s.detalhes.forma]) || '';
+        var sit = x.pago ? '<span class="tag pago">Recebido</span>' : (x.vencimento < hoje ? '<span class="tag atraso">Atrasado</span>' : '<span class="tag">A receber</span>');
+        return '<tr><td>' + E.dataBR(x.vencimento) + '</td><td>' + esc(cli) + '</td><td>' + esc((forma + ' ' + (s.condicao_pagamento || '')).trim()) + '</td><td class="num">' + brl(Number(x.valor)) + '</td><td>' + sit + '</td></tr>';
+      }).join('');
+      var MN = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], hm = '';
+      for (var k = 0; k < 6; k++) {
+        var m = E.mesMais(E.mesAtual(), k), fm = E.faixa(m);
+        var doMes = r[5].data.filter(function (x) { return x.vencimento >= fm[0] && x.vencimento <= fm[1]; });
+        var t = soma(doMes, function (x) { return x.valor; });
+        hm += card(MN[parseInt(m.slice(5), 10) - 1] + '/' + m.slice(0, 4), t, doMes.length ? doMes.length + ' parcela(s)' : 'nada previsto');
+      }
+      $('p-rec-meses').innerHTML = hm;
 
       $('p-receber').innerHTML = r[2].data.length ? r[2].data.map(function (x) {
         var cli = x.servicos && x.servicos.clientes ? x.servicos.clientes.nome : 'Cliente';
