@@ -1,7 +1,11 @@
 (function () {
   var cfg = window.EUROFORM_CONFIG;
   var $ = function (id) { return document.getElementById(id); };
-  var ALIQ = cfg.ALIQUOTA_SIMPLES;
+  // Simples: venda de cadeiras tem uma alíquota; serviços (higienização, manutenção, revestimento) outra.
+  function aliq(categoria) { return categoria === 'venda' ? cfg.ALIQUOTA_VENDA : cfg.ALIQUOTA_SERVICO; }
+  function pct(a) { return (Math.round(a * 10000) / 100).toLocaleString('pt-BR') + '%'; }
+  // Simples de uma OS, sempre recalculado pela categoria (o valor gravado em OS antigas pode ter outra alíquota).
+  function simplesDe(s) { return s.com_nf ? Math.round(Number(s.valor_nf != null ? s.valor_nf : s.valor_bruto) * aliq(s.categoria) * 100) / 100 : 0; }
   var CATS = { higienizacao: 'Higienização', manutencao: 'Manutenção', venda: 'Venda de cadeiras', revestimento: 'Revestimento / Reforma' };
   var FORMAS = { pix: 'PIX', boleto: 'Boleto', ted: 'TED', cartao: 'Cartão', empenho: 'Empenho', dinheiro: 'Dinheiro', outro: 'Outro' };
 
@@ -26,7 +30,7 @@
 
   // ---------- login ----------
   var estado = { servicos: [], clientes: [], editando: null, logado: false };
-  window.EF = { db: db, $: $, num: num, r2: r2, brl: brl, dataBR: dataBR, hoje: hoje, somaDias: somaDias, esc: esc, mostrarErro: mostrarErro, ALIQ: ALIQ, estado: estado, cfg: cfg, abas: {} };
+  window.EF = { db: db, $: $, num: num, r2: r2, brl: brl, dataBR: dataBR, hoje: hoje, somaDias: somaDias, esc: esc, mostrarErro: mostrarErro, aliq: aliq, pct: pct, simplesDe: simplesDe, estado: estado, cfg: cfg, abas: {} };
 
   document.querySelectorAll('.aba[data-aba]').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -106,8 +110,6 @@
 
   function prazoTxt(forma, prazo) { return (forma + ' ' + (prazo === '0' ? 'à vista' : (prazo || ''))).trim(); }
   EF.prazoTxt = prazoTxt;
-  // Valor da OS que fica para a empresa depois do Simples (os gastos entram como despesas).
-  function liquidoDe(s) { return r2(Number(s.valor_bruto) - Number(s.imposto)); }
   function nfPendente(s) { return s.com_nf && !s.nf_emitida_em; }
   function nfTag(s) {
     if (!s.com_nf) return '<span class="tag">Sem NF</span>';
@@ -153,19 +155,17 @@
       return true;
     });
     $('vazio').hidden = itens.length > 0;
-    var tb = 0, tl = 0, ta = 0;
-    itens.forEach(function (s) { tb += Number(s.valor_bruto); tl += liquidoDe(s); ta += recInfo(s).aberto; });
-    $('resumo-os').innerHTML = itens.length ? '<strong>' + itens.length + '</strong> OS · total <strong>' + brl(r2(tb)) + '</strong> · depois do Simples <strong>' + brl(r2(tl)) + '</strong>' +
+    var tb = 0, ta = 0;
+    itens.forEach(function (s) { tb += Number(s.valor_bruto); ta += recInfo(s).aberto; });
+    $('resumo-os').innerHTML = itens.length ? '<strong>' + itens.length + '</strong> OS · total <strong>' + brl(r2(tb)) + '</strong>' +
       (ta ? ' · falta receber <strong>' + brl(r2(ta)) + '</strong>' : '') : '';
     $('lista').innerHTML = itens.map(function (s) {
-      var l = liquidoDe(s);
       var forma = (s.detalhes && FORMAS[s.detalhes.forma]) || '';
       return '<tr data-id="' + s.id + '"><td>' + dataBR(s.data_servico) + '</td>' +
         '<td>' + esc(s.clientes ? s.clientes.nome : '—') + ' <small>' + esc(s.clientes ? s.clientes.tipo : '') + '</small></td>' +
         '<td>' + CATS[s.categoria] + (s.status === 'pendente' ? ' <span class="tag pendente">Pendente</span>' : '') + '</td>' +
         '<td>' + nfTag(s) + '</td>' +
         '<td class="num">' + brl(Number(s.valor_bruto)) + '</td>' +
-        '<td class="num">' + brl(l) + '</td>' +
         '<td>' + esc(prazoTxt(forma, s.condicao_pagamento)) + ' ' + recTag(recInfo(s)) + '</td></tr>';
     }).join('');
   }
@@ -189,11 +189,9 @@
   function recalcular() {
     var comNF = radio('nf') === '1';
     $('r-box-imp').hidden = !comNF;
-    var imposto = comNF ? r2(num('f-bruto') * ALIQ) : 0;
-    var lucro = r2(num('f-bruto') - imposto);
+    var a = aliq($('f-cat').value), imposto = comNF ? r2(num('f-bruto') * a) : 0;
+    $('r-imp-rot').textContent = 'Simples (' + pct(a) + ($('f-cat').value === 'venda' ? ', venda)' : ', serviço)');
     $('r-imp').textContent = brl(imposto);
-    $('r-lucro').textContent = brl(lucro);
-    $('r-lucro').className = lucro >= 0 ? 'pos' : 'neg';
     avisoParcelas();
   }
   function nfEmitida() { return radio('nf') === '1' && radio('nfe') === '1'; }
@@ -218,6 +216,7 @@
   }
   document.querySelectorAll('input[name=tipo]').forEach(function (r) { r.addEventListener('change', atualizarTipo); });
   $('f-bruto').addEventListener('input', recalcular);
+  $('f-cat').addEventListener('change', recalcular);
   document.querySelectorAll('input[name=nf]').forEach(function (r) { r.addEventListener('change', function () { atualizarNF(); recalcular(); }); });
   document.querySelectorAll('input[name=nfe]').forEach(function (r) { r.addEventListener('change', atualizarNF); });
   document.querySelectorAll('input[name=status]').forEach(function (r) { r.addEventListener('change', atualizarStatus); });
@@ -358,7 +357,7 @@
       detalhes: Object.assign({}, ant, { forma: $('f-forma').value, nf_numero: comNF ? ($('f-nf-num').value.trim() || null) : null }),
       com_nf: comNF, valor_nf: comNF ? bruto : null, valor_bruto: bruto,
       status: radio('status'), nf_emitida_em: emitida ? $('f-nf-data').value : null,
-      custo_total: 0, imposto: comNF ? r2(bruto * ALIQ) : 0,   // custo não é mais usado: os gastos são lançados em Despesas
+      custo_total: 0, imposto: comNF ? r2(bruto * aliq($('f-cat').value)) : 0,   // custo não é mais usado: os gastos são lançados em Despesas
       condicao_pagamento: $('f-prazos').value.trim() || null, observacoes: $('f-obs').value.trim() || null
     };
     var linhas = lerParcelas();

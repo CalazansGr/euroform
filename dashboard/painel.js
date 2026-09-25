@@ -16,7 +16,7 @@
     return E.garantirMes(mes).catch(function () {}).then(function () {
       var av = E.textoAvisoSimples(); $('p-aviso').textContent = '⚠ ' + av; $('p-aviso').hidden = !av;
       return Promise.all([
-        db.from('servicos').select('valor_bruto,com_nf,imposto,status').gte('data_servico', f[0]).lte('data_servico', f[1]),
+        db.from('servicos').select('valor_bruto,valor_nf,com_nf,categoria,status').gte('data_servico', f[0]).lte('data_servico', f[1]),
         db.from('despesas').select('tipo,descricao,valor,pago').gte('vencimento', f[0]).lte('vencimento', f[1]),
         db.from('recebimentos').select('*, servicos(clientes(nome))').eq('pago', false).lte('vencimento', lim).order('vencimento'),
         db.from('despesas').select('*').eq('pago', false).lte('vencimento', lim).order('vencimento'),
@@ -33,7 +33,7 @@
       var semNF = soma(os.filter(function (s) { return !s.com_nf; }), function (s) { return s.valor_bruto; });
       // Lucro = faturado − Simples das NFs do mês − todas as despesas que vencem no mês.
       // A guia do Simples (gerada sozinha) fica de fora aqui: o Simples já foi descontado pelas NFs do mês.
-      var imp = soma(os, function (s) { return s.imposto; });
+      var imp = soma(os, E.simplesDe);
       var ehGuiaSimples = function (d) { return d.tipo === 'imposto' && (d.descricao || '').indexOf('Simples Nacional (NF de') === 0; };
       var variaveis = soma(desp.filter(function (d) { return d.tipo === 'variavel'; }), function (d) { return d.valor; });
       var fixas = soma(desp.filter(function (d) { return d.tipo === 'recorrente'; }), function (d) { return d.valor; });
@@ -52,7 +52,7 @@
         card('Falta pagar no mês', faltaPag, 'de ' + brl(totDesp) + ' em despesas no mês');
 
       $('p-detalhes').innerHTML =
-        card('Faturado', r2(comNF + semNF), 'Serviços realizados no mês') + card('− Simples', imp, '10,5% das NFs do mês') +
+        card('Faturado', r2(comNF + semNF), 'Serviços realizados no mês') + card('− Simples', imp, E.pct(E.cfg.ALIQUOTA_VENDA) + ' nas vendas e ' + E.pct(E.cfg.ALIQUOTA_SERVICO) + ' nos serviços com NF') +
         card('− Fornecedores e variáveis', variaveis, 'Peças, cadeiras, tecido, estofador... que vencem no mês') +
         card('− Despesas fixas', fixas, 'Salários, aluguel, pró-labore etc.') +
         (outrosImp ? card('− Outros impostos', outrosImp, 'Lançados à mão em Despesas') : '') +

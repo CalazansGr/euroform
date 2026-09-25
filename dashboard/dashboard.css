@@ -151,9 +151,7 @@ h3 small{margin-left:6px}
   .t-servicos td:nth-child(3){grid-column:1;grid-row:2;text-align:left;color:#555}
   .t-servicos td:nth-child(1){grid-column:2;grid-row:2;color:#777;font-size:13px}
   .t-servicos td:nth-child(4){grid-column:1;grid-row:3;text-align:left}
-  .t-servicos td:nth-child(6){grid-column:2;grid-row:3}
-  .t-servicos td:nth-child(6)::before{display:inline;content:"Líquido ";font-weight:400;color:#777}
-  .t-servicos td:nth-child(7){grid-column:1 / -1;grid-row:4;text-align:left;color:#777;font-size:13px}
+  .t-servicos td:nth-child(6){grid-column:1 / -1;grid-row:4;text-align:left;color:#777;font-size:13px}
   /* Despesas: cartão compacto */
   .t-despesas tbody tr{display:grid;grid-template-columns:1fr auto;gap:3px 12px;align-items:center}
   .t-despesas td{display:block;padding:0}

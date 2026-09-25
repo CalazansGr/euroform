@@ -44,8 +44,7 @@
         'Serviços': r[1].map(function (s) {
           return { 'Data': s.data_servico, 'Cliente': s.clientes ? s.clientes.nome : '', 'Tipo': s.clientes ? s.clientes.tipo : '', 'Categoria': CATS[s.categoria] || s.categoria,
             'Situação': s.status === 'pendente' ? 'Pendente' : 'Realizado',
-            'Com NF': sim(s.com_nf), 'NF emitida em': s.nf_emitida_em || (s.com_nf ? 'a emitir' : ''), 'Nº NF': (s.detalhes && s.detalhes.nf_numero) || '', 'Preço cobrado': Number(s.valor_bruto), 'Simples (10,5%)': Number(s.imposto),
-            'Depois do Simples': Math.round((Number(s.valor_bruto) - Number(s.imposto)) * 100) / 100,
+            'Com NF': sim(s.com_nf), 'NF emitida em': s.nf_emitida_em || (s.com_nf ? 'a emitir' : ''), 'Nº NF': (s.detalhes && s.detalhes.nf_numero) || '', 'Preço cobrado': Number(s.valor_bruto), 'Simples': E.simplesDe(s),
             'Forma de pagamento': (s.detalhes && FORMAS[s.detalhes.forma]) || '', 'Prazo (dias)': s.condicao_pagamento || '', 'Observações': s.observacoes || '' };
         }),
         'Recebimentos': r[2].map(function (x) {
