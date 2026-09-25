@@ -45,25 +45,58 @@
     }
   }
 
-  // ===== Busca de produtos =====
+  // ===== Busca + filtros de produtos =====
   var campoBusca = document.getElementById('busca-produto-input');
   var cartoes = document.querySelectorAll('.produto-card');
-  if (campoBusca && cartoes.length) {
-    campoBusca.addEventListener('input', function () {
-      var termo = campoBusca.value.trim().toLowerCase();
-      var algumVisivel = false;
+  var chips = document.querySelectorAll('.filtro-chip');
+  var resultado = document.getElementById('filtro-resultado');
+  if (cartoes.length) {
+    var filtroAtual = '';
+
+    var nomeDe = function (cartao) {
+      var nome = cartao.querySelector('.produto-nome');
+      return nome ? nome.textContent.toLowerCase() : '';
+    };
+
+    // quantidade de modelos em cada filtro
+    chips.forEach(function (chip) {
+      var f = chip.getAttribute('data-filtro');
+      var qtd = 0;
+      cartoes.forEach(function (c) { if (nomeDe(c).indexOf(f) !== -1) qtd++; });
+      var el = chip.querySelector('.filtro-qtd');
+      if (el) el.textContent = qtd;
+    });
+
+    var aplicar = function () {
+      var termo = campoBusca ? campoBusca.value.trim().toLowerCase() : '';
+      var visiveis = 0;
 
       cartoes.forEach(function (cartao) {
-        var nome = cartao.querySelector('.produto-nome');
-        var texto = nome ? nome.textContent.toLowerCase() : '';
-        var corresponde = texto.indexOf(termo) !== -1;
+        var texto = nomeDe(cartao);
+        var corresponde = texto.indexOf(termo) !== -1 && texto.indexOf(filtroAtual) !== -1;
         cartao.style.display = corresponde ? '' : 'none';
-        if (corresponde) algumVisivel = true;
+        if (corresponde) visiveis++;
       });
 
       var semResultado = document.querySelector('.produto-sem-resultado');
-      if (semResultado) semResultado.style.display = algumVisivel ? 'none' : 'block';
+      if (semResultado) semResultado.style.display = visiveis ? 'none' : 'block';
+      if (resultado) resultado.textContent = visiveis + (visiveis === 1 ? ' cadeira encontrada' : ' cadeiras encontradas');
+    };
+
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        filtroAtual = chip.getAttribute('data-filtro');
+        chips.forEach(function (o) {
+          var ativo = o === chip;
+          o.classList.toggle('ativo', ativo);
+          o.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+        });
+        aplicar();
+      });
     });
+
+    if (campoBusca) campoBusca.addEventListener('input', aplicar);
+    aplicar();
   }
 
   // ===== Menu mobile =====
