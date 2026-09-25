@@ -203,3 +203,5 @@ h4 span{font-weight:400;color:var(--suave);font-size:13px}
   .s-linha span:nth-child(2){grid-column:1;grid-row:2;font-size:12px}
   .s-linha b{grid-row:1 / span 2;grid-column:2}
 }
+.tag-andamento{display:inline-block;background:var(--verde-bg);color:var(--verde);border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;vertical-align:1px}
+.andamento-obs{margin-top:6px;font-size:13px;color:var(--verde);background:var(--verde-bg);border-left:3px solid var(--verde);border-radius:6px;padding:4px 8px}

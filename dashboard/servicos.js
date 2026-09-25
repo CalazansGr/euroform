@@ -26,7 +26,8 @@
     const q = $('s-busca').value.trim().toLowerCase(), mes = $('s-mes').value, sit = $('s-situacao').value;
     const itens = ordens.filter((o) => {
       if (mes && o.data.slice(0, 7) !== mes) return false;
-      if (q && (o.cliente + ' ' + (o.descricao || '')).toLowerCase().indexOf(q) < 0) return false;
+      if (sit === 'andamento' && !o.em_andamento) return false;
+      if (q && [o.cliente, o.descricao, o.andamento_obs].join(' ').toLowerCase().indexOf(q) < 0) return false;
       const s = situacao(o);
       if (sit === 'aberto' && !s.aberto) return false;
       if (sit === 'atraso' && !s.atrasadas) return false;
@@ -48,8 +49,10 @@
       }).join('');
       return `<article class="item" data-id="${o.id}">` +
         `<div class="item-topo"><div><b class="item-nome">${esc(o.cliente)}</b> <small class="tipo">${o.cliente_tipo === 'PJ' ? 'Empresa' : 'PF'}</small>` +
+        (o.em_andamento ? ' <span class="tag-andamento">Em andamento</span>' : '') +
         (o.nf_emitida ? ` <span class="tag-nf">NF${o.nf_numero ? ' nº ' + esc(o.nf_numero) : ' emitida'}</span>` : '') +
-        `<div class="item-sub">${CATS[o.categoria]}${o.descricao ? ' · ' + esc(o.descricao) : ''} · ${dataBR(o.data)}</div></div>` +
+        `<div class="item-sub">${CATS[o.categoria]}${o.descricao ? ' · ' + esc(o.descricao) : ''} · ${dataBR(o.data)}</div>` +
+        (o.em_andamento && o.andamento_obs ? `<div class="andamento-obs">${esc(o.andamento_obs)}</div>` : '') + '</div>' +
         `<b class="item-valor">${brl(Number(o.valor))}</b></div>` +
         `<div class="parcs">${parcelas}</div></article>`;
     }).join('');
@@ -78,6 +81,9 @@
   const radio = (v, nome) => { document.querySelector(`input[name=${nome || 's-tipo'}][value="${v}"]`).checked = true; };
   const nfEmitida = () => document.querySelector('input[name=s-nf]:checked').value === '1';
   function mostrarNF() { $('s-nf-campo').hidden = !nfEmitida(); }
+  const emAndamento = () => document.querySelector('input[name=s-andamento]:checked').value === '1';
+  function mostrarAndamento() { $('s-andamento-campo').hidden = !emAndamento(); }
+  document.querySelectorAll('input[name=s-andamento]').forEach((r) => r.addEventListener('change', () => { mostrarAndamento(); if (emAndamento()) $('s-andamento-obs').focus(); }));
   document.querySelectorAll('input[name=s-nf]').forEach((r) => r.addEventListener('change', () => { mostrarNF(); if (nfEmitida()) $('s-nf-numero').focus(); }));
 
   function abrir(o) {
@@ -89,12 +95,13 @@
       $('s-cliente').value = o.cliente; radio(o.cliente_tipo); $('s-categoria').value = o.categoria;
       $('s-data').value = o.data; $('s-descricao').value = o.descricao || ''; $('s-valor').value = o.valor; $('s-obs').value = o.obs || '';
       radio(o.nf_emitida ? '1' : '0', 's-nf'); $('s-nf-numero').value = o.nf_numero || '';
+      radio(o.em_andamento ? '1' : '0', 's-andamento'); $('s-andamento-obs').value = o.andamento_obs || '';
       editor.carregar(o.parcelas);
     } else {
       $('s-data').value = hoje(); radio('PF');
       editor.novo('0');
     }
-    mostrarNF();
+    mostrarNF(); mostrarAndamento();
     dlg.showModal();
     if (!o) $('s-cliente').focus();
   }
@@ -113,6 +120,7 @@
       cliente: $('s-cliente').value.trim().replace(/\s+/g, ' '), cliente_tipo: document.querySelector('input[name=s-tipo]:checked').value,
       categoria: $('s-categoria').value, data: $('s-data').value, descricao: $('s-descricao').value.trim() || null,
       valor: r2(num('s-valor')), obs: $('s-obs').value.trim() || null,
+      em_andamento: emAndamento(), andamento_obs: emAndamento() ? ($('s-andamento-obs').value.trim() || null) : null,
       nf_emitida: nfEmitida(), nf_numero: nfEmitida() ? ($('s-nf-numero').value.trim() || null) : null
     };
     const ps = editor.ler(), btn = $('s-salvar'); btn.disabled = true;

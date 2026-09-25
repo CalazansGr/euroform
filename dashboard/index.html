@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Euroform · Painel interno</title>
-<link rel="stylesheet" href="estilo.css">
+<link rel="stylesheet" href="estilo.css?v=3">
 </head>
 <body>
 
@@ -63,6 +63,7 @@
       <input type="month" id="s-mes" aria-label="Mês">
       <select id="s-situacao" aria-label="Situação">
         <option value="">Todos</option>
+        <option value="andamento">Em andamento</option>
         <option value="aberto">Falta receber</option>
         <option value="atraso">Com parcela atrasada</option>
         <option value="quitado">Quitados</option>
@@ -124,6 +125,10 @@
           <option value="higienizacao">Higienização</option>
         </select></label>
       <label><span>Data</span><input type="date" id="s-data" required></label>
+      <div class="campo"><span>Em andamento?</span>
+        <div class="seg"><label><input type="radio" name="s-andamento" value="0" checked><span>Não</span></label><label><input type="radio" name="s-andamento" value="1"><span>Sim</span></label></div>
+      </div>
+      <label class="dupla" id="s-andamento-campo" hidden><span>O que está em andamento?</span><input id="s-andamento-obs" placeholder="Ex.: faltam 4 cadeiras, esperando tecido chegar"></label>
       <label class="dupla"><span>Descrição (opcional)</span><input id="s-descricao" placeholder="Ex.: 10 cadeiras Matrix Diretor"></label>
       <label><span>Valor total (R$)</span><input type="number" id="s-valor" min="0" step="0.01" inputmode="decimal" required></label>
       <div class="campo"><span>Nota fiscal emitida?</span>
@@ -193,10 +198,10 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
-<script src="comum.js"></script>
-<script src="servicos.js"></script>
-<script src="despesas.js"></script>
-<script src="painel.js"></script>
+<script src="config.js?v=3"></script>
+<script src="comum.js?v=3"></script>
+<script src="servicos.js?v=3"></script>
+<script src="despesas.js?v=3"></script>
+<script src="painel.js?v=3"></script>
 </body>
 </html>
