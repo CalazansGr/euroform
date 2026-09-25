@@ -5,382 +5,198 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Euroform · Painel interno</title>
-<link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="estilo.css">
 </head>
 <body>
-<main class="login" id="tela-login">
+
+<main class="login" id="tela-login" hidden>
   <form class="login-card" id="form-login">
     <h1>Euroform</h1>
     <p class="sub">Painel interno · acesso restrito</p>
     <label>E-mail<input type="email" id="email" autocomplete="username" required></label>
     <label>Senha<input type="password" id="senha" autocomplete="current-password" required></label>
     <button type="submit">Entrar</button>
-    <p class="erro" id="erro" role="alert" hidden></p>
+    <p class="erro" id="erro-login" role="alert" hidden></p>
   </form>
 </main>
 
 <div id="app" hidden>
   <header class="topo">
-    <strong>Euroform</strong>
+    <strong class="marca">Euroform</strong>
     <nav class="abas">
       <button type="button" class="aba ativa" data-aba="painel">Painel</button>
-      <button type="button" class="aba" data-aba="servicos">Serviços (OS)</button>
-      <button type="button" class="aba" data-aba="receber">A receber</button>
+      <button type="button" class="aba" data-aba="servicos">Serviços</button>
       <button type="button" class="aba" data-aba="despesas">Despesas</button>
-      <button type="button" class="aba" data-aba="fluxo">Fluxo de caixa</button>
     </nav>
     <span id="usuario"></span>
-    <button id="btn-exportar" type="button" class="btn-sec" title="Baixa uma planilha Excel com todos os dados (cópia de segurança)">Exportar backup</button>
-    <button id="btn-sair" type="button" class="btn-sec">Sair</button>
+    <button type="button" class="sec" id="btn-sair">Sair</button>
   </header>
 
-  <p class="aviso aviso-banco" id="aviso-banco" hidden>⚠ Falta atualizar o banco de dados para as funções novas (situação do serviço, NF a emitir, data do recebimento). No Supabase, abra <b>SQL Editor</b>, cole o conteúdo do arquivo <b>migracao-recebimentos.sql</b> e clique em <b>Run</b>. Até lá, salvar OS pode dar erro.</p>
-
-  <main class="conteudo" id="aba-painel">
+  <!-- ================= PAINEL ================= -->
+  <main class="pagina" id="aba-painel">
     <div class="pagina-topo">
-      <div><h2 class="titulo">Painel</h2><p class="sub" id="p-subtitulo">Resumo do mês</p></div>
-      <input type="month" id="p-mes" aria-label="Mês">
+      <div><h2>Painel</h2><p class="sub" id="p-sub">Resumo do mês</p></div>
+      <input type="month" id="p-mes" aria-label="Mês" class="mes-painel">
     </div>
-
-    <p class="aviso" id="p-aviso" hidden></p>
     <div class="cards cards-4" id="p-cards"></div>
 
-    <div class="duas-col bloco">
-      <section>
-        <h3>Receber <small>atrasado e próximos 7 dias</small></h3>
-        <div id="p-receber" class="lista-pend"></div>
-      </section>
-      <section>
-        <h3>Pagar <small>atrasado e próximos 7 dias</small></h3>
-        <div id="p-pagar" class="lista-pend"></div>
-      </section>
-    </div>
-
     <section class="bloco">
-      <h3>Recebimentos por mês <small>toque num mês para ver as parcelas</small></h3>
-      <div class="meses" id="p-rec-meses"></div>
-      <div class="tabela-wrap">
-        <table class="tabela">
-          <thead><tr><th>Vencimento</th><th>Cliente</th><th>Forma / prazo</th><th class="num">Valor</th><th>Situação</th></tr></thead>
-          <tbody id="p-rec-lista"></tbody>
-        </table>
-        <p class="vazio" id="p-rec-vazio" hidden>Nenhum recebimento previsto neste mês.</p>
-      </div>
+      <h4>Por tipo de serviço <span>serviços feitos no mês</span></h4>
+      <div class="tabela-tipos" id="p-tipos"></div>
+      <p class="nota">Lucro por tipo = valor dos serviços − despesas ligadas a eles (campo "É de algum serviço?" na despesa). Despesas sem serviço, como aluguel e salários, ficam de fora desta comparação.</p>
     </section>
 
-    <details class="bloco detalhes">
-      <summary>Ver como o lucro foi calculado</summary>
-      <div class="cards" id="p-detalhes"></div>
-    </details>
-  </main>
-
-  <main class="conteudo" id="aba-fluxo" hidden>
-    <div class="pagina-topo">
-      <div><h2 class="titulo">Fluxo de caixa</h2><p class="sub">O que entra e o que sai, dia a dia</p></div>
-      <div class="controles">
-        <label class="campo-saldo"><span>Saldo em caixa hoje (opcional)</span><input type="number" id="fx-saldo" step="0.01" inputmode="decimal" placeholder="não informado"></label>
-        <select id="fx-horizonte" aria-label="Período">
-          <option value="30">Próximos 30 dias</option>
-          <option value="60" selected>Próximos 60 dias</option>
-          <option value="90">Próximos 90 dias</option>
-        </select>
-      </div>
-    </div>
-    <p class="aviso" id="fx-msg" hidden></p>
-    <div id="fx-alerta" hidden></div>
-    <div class="cards cards-4" id="fx-cards"></div>
-
     <section class="bloco">
-      <h3>Dia a dia</h3>
-      <div class="tabela-wrap">
-        <table class="tabela t-fluxo">
-          <thead><tr><th>Dia</th><th>Movimento</th><th class="num">Entra</th><th class="num">Sai</th><th class="num" id="fx-th-saldo">Acumulado</th></tr></thead>
-          <tbody id="fx-lista"></tbody>
-        </table>
-        <p class="vazio" id="fx-vazio" hidden>Nada a receber ou pagar nesse período.</p>
-      </div>
+      <h4>Simples estimado <span>só uma estimativa: não entra em nenhuma conta do sistema</span></h4>
+      <div class="simples" id="p-simples"></div>
     </section>
-
-    <details class="bloco detalhes" id="fx-cal-det" open>
-      <summary>Calendário <small>vermelho = saldo negativo</small></summary>
-      <div id="fx-calendarios"></div>
-    </details>
   </main>
 
-  <main class="conteudo" id="aba-servicos" hidden>
+  <!-- ================= SERVIÇOS ================= -->
+  <main class="pagina" id="aba-servicos" hidden>
     <div class="pagina-topo">
-      <div><h2 class="titulo">Serviços (OS)</h2><p class="sub">Todas as ordens de serviço · toque numa linha para editar</p></div>
-      <button type="button" id="btn-nova">+ Nova OS</button>
+      <div><h2>Serviços</h2><p class="sub">O que a empresa vendeu e vai receber</p></div>
+      <button type="button" id="btn-novo-servico">+ Novo serviço</button>
     </div>
-    <div class="barra">
-      <input type="search" id="busca" placeholder="Buscar cliente ou observação...">
-      <input type="month" id="filtro-mes" title="Filtrar por mês" aria-label="Mês">
-      <select id="filtro-cat">
-        <option value="">Todas as categorias</option>
-        <option value="higienizacao">Higienização</option>
-        <option value="manutencao">Manutenção</option>
-        <option value="venda">Venda de cadeiras</option>
-        <option value="revestimento">Revestimento / Reforma</option>
-      </select>
-      <select id="filtro-nf">
-        <option value="">Com e sem NF</option>
-        <option value="1">Só com NF</option>
-        <option value="0">Só sem NF</option>
-        <option value="pend">NF a emitir</option>
-      </select>
-      <select id="filtro-status">
-        <option value="">Pendentes e realizados</option>
-        <option value="pendente">Só pendentes (a fazer)</option>
-        <option value="realizado">Só realizados</option>
-      </select>
-      <select id="filtro-rec">
-        <option value="">Pagos e a receber</option>
+    <div class="filtros">
+      <input type="search" id="s-busca" placeholder="Buscar cliente ou descrição...">
+      <input type="month" id="s-mes" aria-label="Mês">
+      <select id="s-situacao" aria-label="Situação">
+        <option value="">Todos</option>
         <option value="aberto">Falta receber</option>
         <option value="atraso">Com parcela atrasada</option>
         <option value="quitado">Quitados</option>
       </select>
     </div>
-    <p class="resumo-lista" id="resumo-os"></p>
-    <div class="tabela-wrap">
-      <table class="tabela t-servicos">
-        <thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>NF</th><th class="num">Valor</th><th>Recebimento</th></tr></thead>
-        <tbody id="lista"></tbody>
-      </table>
-      <p class="vazio" id="vazio" hidden>Nenhuma OS encontrada.</p>
-    </div>
+    <p class="resumo" id="s-resumo"></p>
+    <div class="lista" id="s-lista"></div>
+    <p class="vazio" id="s-vazio" hidden>Nenhum serviço aqui ainda.</p>
   </main>
 
-  <main class="conteudo" id="aba-receber" hidden>
+  <!-- ================= DESPESAS ================= -->
+  <main class="pagina" id="aba-despesas" hidden>
     <div class="pagina-topo">
-      <div><h2 class="titulo">A receber</h2><p class="sub">Todas as parcelas dos clientes · marque <b>Sim</b> quando o dinheiro cair</p></div>
+      <div><h2>Despesas</h2><p class="sub">O que a empresa vai pagar no mês</p></div>
+      <div class="botoes">
+        <button type="button" class="sec" id="btn-fixos">Despesas fixas</button>
+        <button type="button" id="btn-nova-despesa">+ Nova despesa</button>
+      </div>
     </div>
-    <div class="barra">
-      <input type="search" id="rc-busca" placeholder="Buscar cliente...">
-      <select id="rc-sit" aria-label="Situação">
-        <option value="aberto">Falta receber</option>
-        <option value="atraso">Só atrasadas</option>
-        <option value="pago">Já recebidas</option>
-        <option value="">Todas</option>
+    <div class="filtros">
+      <input type="month" id="d-mes" aria-label="Mês">
+      <select id="d-situacao" aria-label="Situação">
+        <option value="">Pagas e a pagar</option>
+        <option value="aberto">Só a pagar</option>
+        <option value="pago">Só pagas</option>
       </select>
-      <input type="month" id="rc-mes" title="Mês do vencimento (opcional)" aria-label="Mês do vencimento">
-    </div>
-    <div class="cards cards-3">
-      <div class="card"><span>Falta receber</span><strong id="rc-aberto">R$ 0,00</strong><small id="rc-aberto-n"></small></div>
-      <div class="card"><span>Atrasado</span><strong id="rc-atraso" class="neg">R$ 0,00</strong><small id="rc-atraso-n"></small></div>
-      <div class="card"><span>Já recebido</span><strong id="rc-pago" class="pos">R$ 0,00</strong><small id="rc-pago-n"></small></div>
-    </div>
-    <div class="tabela-wrap">
-      <table class="tabela t-receber">
-        <thead><tr><th>Cliente / serviço</th><th>Parcela</th><th>Vencimento</th><th class="num">Valor</th><th>Recebido?</th><th>Recebido em</th></tr></thead>
-        <tbody id="rc-lista"></tbody>
-      </table>
-      <p class="vazio" id="rc-vazio" hidden>Nenhuma parcela neste filtro.</p>
-    </div>
-  </main>
-
-  <main class="conteudo" id="aba-despesas" hidden>
-    <div class="pagina-topo">
-      <div><h2 class="titulo">Despesas</h2><p class="sub">Contas a pagar do mês · toque numa linha para editar</p></div>
-      <div class="controles"><button type="button" class="btn-sec" id="btn-recorrentes">Despesas fixas</button><button type="button" id="btn-nova-desp">+ Nova despesa</button></div>
-    </div>
-    <div class="barra">
-      <input type="month" id="d-mes">
-      <select id="d-filtro-tipo">
+      <select id="d-categoria" aria-label="Tipo">
         <option value="">Todos os tipos</option>
-        <option value="variavel">Variáveis (serviços)</option>
-        <option value="recorrente">Recorrentes (fixas)</option>
-        <option value="imposto">Impostos (Simples)</option>
-      </select>
-      <select id="d-filtro-pago">
-        <option value="">Pagas e pendentes</option>
-        <option value="0">Só pendentes</option>
-        <option value="1">Só pagas</option>
       </select>
     </div>
-    <p class="aviso" id="d-aviso" hidden></p>
-    <div class="cards cards-3">
-      <div class="card"><span>Total do mês</span><strong id="dt-total">R$ 0,00</strong></div>
-      <div class="card"><span>Já pago</span><strong id="dt-pago" class="pos">R$ 0,00</strong></div>
-      <div class="card dest"><span>Falta pagar</span><strong id="dt-pendente">R$ 0,00</strong></div>
+    <div class="cards">
+      <div class="card"><span>Total do mês</span><strong id="d-total">R$ 0,00</strong></div>
+      <div class="card"><span>Já pago</span><strong id="d-pago" class="pos">R$ 0,00</strong></div>
+      <div class="card dest"><span>Falta pagar</span><strong id="d-falta">R$ 0,00</strong></div>
     </div>
-    <div class="tabela-wrap">
-      <table class="tabela t-despesas">
-        <thead><tr><th>Vencimento</th><th>Descrição</th><th>Fornecedor</th><th>Tipo</th><th class="num">Valor</th><th>Situação</th></tr></thead>
-        <tbody id="lista-desp"></tbody>
-      </table>
-      <p class="vazio" id="vazio-desp" hidden>Nenhuma despesa neste filtro.</p>
-    </div>
+    <section class="bloco-atraso" id="d-atrasadas" hidden>
+      <h4>Atrasadas de meses anteriores <span id="d-atrasadas-total"></span></h4>
+      <div class="lista" id="d-atrasadas-lista"></div>
+    </section>
+    <h4 class="titulo-mes" id="d-titulo-mes" hidden>Deste mês</h4>
+    <div class="lista" id="d-lista"></div>
+    <p class="vazio" id="d-vazio" hidden>Nenhuma despesa neste mês.</p>
   </main>
 </div>
 
-<dialog id="dlg-desp">
-  <form id="form-desp" class="os-form">
-    <h2 id="desp-titulo">Nova despesa</h2>
-    <p class="sub" id="desp-info" hidden></p>
+<!-- ================= FORM: SERVIÇO ================= -->
+<dialog id="dlg-servico">
+  <form id="form-servico" class="form">
+    <h3 id="s-titulo">Novo serviço</h3>
     <div class="grade">
-      <label class="grande"><span>Descrição</span><input id="x-desc" required placeholder="Ex.: pistões, tecido, estofador..."></label>
-      <label><span>Fornecedor / quem recebe</span><input id="x-forn"></label>
-      <label><span>Valor (R$)</span><input type="number" id="x-valor" min="0" step="0.01" inputmode="decimal" required></label>
-      <label><span>Vencimento</span><input type="date" id="x-venc" required></label>
-      <label><span>Tipo</span>
-        <select id="x-tipo">
-          <option value="variavel">Variável (fornecedor, peças, estofador...)</option>
-          <option value="recorrente">Fixa (avulsa)</option>
-          <option value="imposto">Imposto</option>
-        </select></label>
-      <label class="grande"><span>Vincular a uma OS (opcional)</span><select id="x-os"><option value="">— nenhuma —</option></select></label>
-      <label id="x-parc-campo"><span>Parcelas (mensais)</span><input type="number" id="x-parc" min="1" max="36" step="1" value="1" inputmode="numeric"></label>
-    </div>
-    <p class="dica">Toda despesa desconta do lucro do mês em que vence. Vincular a uma OS é opcional, só para saber de qual serviço ela é.</p>
-    <div id="x-parc-box" hidden>
-      <p class="sub">Uma conta a pagar por linha. Ajuste a data e o valor de cada parcela como o fornecedor combinou.</p>
-      <div id="x-parcelas" class="parcelas"></div>
-      <div class="acoes-parc">
-        <button type="button" class="btn-sec" id="x-parc-add">+ Adicionar parcela</button>
-        <button type="button" class="btn-sec" id="x-parc-refazer">Refazer mensais iguais</button>
+      <label class="dupla"><span>Cliente</span><input id="s-cliente" list="lista-clientes" required autocomplete="off"></label>
+      <div class="campo"><span>Tipo de cliente</span>
+        <div class="seg"><label><input type="radio" name="s-tipo" value="PF" checked><span>Pessoa física</span></label><label><input type="radio" name="s-tipo" value="PJ"><span>Empresa</span></label></div>
       </div>
-      <p class="aviso" id="x-parc-aviso" hidden></p>
+      <label><span>Serviço</span>
+        <select id="s-categoria" required>
+          <option value="venda">Venda de cadeiras</option>
+          <option value="manutencao">Manutenção / reforma</option>
+          <option value="higienizacao">Higienização</option>
+        </select></label>
+      <label><span>Data</span><input type="date" id="s-data" required></label>
+      <label class="dupla"><span>Descrição (opcional)</span><input id="s-descricao" placeholder="Ex.: 10 cadeiras Matrix Diretor"></label>
+      <label><span>Valor total (R$)</span><input type="number" id="s-valor" min="0" step="0.01" inputmode="decimal" required></label>
+      <div class="campo"><span>Nota fiscal emitida?</span>
+        <div class="seg"><label><input type="radio" name="s-nf" value="0" checked><span>Não</span></label><label><input type="radio" name="s-nf" value="1"><span>Sim</span></label></div>
+      </div>
+      <label id="s-nf-campo" hidden><span>Número da NF</span><input id="s-nf-numero" inputmode="numeric" placeholder="Ex.: 1234"></label>
     </div>
-    <label class="check" id="x-pago-lbl"><input type="checkbox" id="x-pago"> Já foi paga</label>
-    <p class="erro" id="desp-erro" role="alert" hidden></p>
+    <fieldset>
+      <legend>Como o cliente vai pagar</legend>
+      <div id="s-parcelas"></div>
+    </fieldset>
+    <label><span>Observações</span><textarea id="s-obs" rows="2"></textarea></label>
+    <p class="erro" id="s-erro" role="alert" hidden></p>
     <div class="acoes">
-      <button type="button" class="btn-perigo" id="btn-excluir-desp" hidden>Excluir</button>
+      <button type="button" class="perigo" id="s-excluir" hidden>Excluir</button>
       <span class="esp"></span>
-      <button type="button" class="btn-sec" id="btn-cancelar-desp">Cancelar</button>
-      <button type="submit">Salvar</button>
+      <button type="button" class="sec" data-fechar>Cancelar</button>
+      <button type="submit" id="s-salvar">Salvar</button>
     </div>
   </form>
 </dialog>
+<datalist id="lista-clientes"></datalist>
 
-<dialog id="dlg-rec">
-  <div class="os-form">
-    <h2>Despesas fixas mensais</h2>
-    <p class="sub">Salários, pro-labore, aluguel, sistemas... Lance uma vez: elas entram sozinhas em todo mês, no dia indicado.</p>
-    <div id="lista-rec" class="parcelas"></div>
-    <form id="form-rec" class="grade">
-      <label class="grande"><span>Descrição</span><input id="r-desc" required placeholder="Ex.: Aluguel"></label>
-      <label><span>Valor mensal (R$)</span><input type="number" id="r-valor" min="0" step="0.01" inputmode="decimal" required></label>
-      <label><span>Dia do vencimento</span><input type="number" id="r-dia" min="1" max="31" required></label>
+<!-- ================= FORM: DESPESA ================= -->
+<dialog id="dlg-despesa">
+  <form id="form-despesa" class="form">
+    <h3 id="d-titulo">Nova despesa</h3>
+    <p class="sub" id="d-info" hidden></p>
+    <div class="grade">
+      <label class="dupla"><span>Descrição</span><input id="d-descricao" required placeholder="Ex.: 25 cadeiras Veneza, tecido, estofador..."></label>
+      <label><span>Fornecedor / quem recebe</span><input id="d-fornecedor" list="lista-fornecedores" autocomplete="off"></label>
+      <label><span>Tipo</span><select id="d-cat"></select></label>
+      <label class="dupla"><span>É de algum serviço? (opcional)</span><select id="d-ordem"><option value="">— não —</option></select></label>
+      <label><span>Data da compra</span><input type="date" id="d-data" required></label>
+      <label><span>Valor total (R$)</span><input type="number" id="d-valor" min="0" step="0.01" inputmode="decimal" required></label>
+    </div>
+    <fieldset>
+      <legend>Como vamos pagar</legend>
+      <div id="d-parcelas"></div>
+    </fieldset>
+    <p class="erro" id="d-erro" role="alert" hidden></p>
+    <div class="acoes">
+      <button type="button" class="perigo" id="d-excluir" hidden>Excluir</button>
+      <span class="esp"></span>
+      <button type="button" class="sec" data-fechar>Cancelar</button>
+      <button type="submit" id="d-salvar">Salvar</button>
+    </div>
+  </form>
+</dialog>
+<datalist id="lista-fornecedores"></datalist>
+
+<!-- ================= DESPESAS FIXAS ================= -->
+<dialog id="dlg-fixos">
+  <div class="form">
+    <h3>Despesas fixas</h3>
+    <p class="sub">Aluguel, salários, pró-labore, sistemas... Cadastre uma vez: entram sozinhas em todo mês, no dia indicado.</p>
+    <div id="f-lista" class="fixos"></div>
+    <form id="form-fixo" class="grade grade-fixo">
+      <label class="dupla"><span>Descrição</span><input id="f-descricao" required placeholder="Ex.: Aluguel"></label>
+      <label><span>Valor por mês (R$)</span><input type="number" id="f-valor" min="0" step="0.01" inputmode="decimal" required></label>
+      <label><span>Dia que vence</span><input type="number" id="f-dia" min="1" max="31" required></label>
       <button type="submit">+ Adicionar</button>
     </form>
-    <p class="erro" id="rec-erro" role="alert" hidden></p>
-    <div class="acoes"><span class="esp"></span><button type="button" class="btn-sec" id="btn-fechar-rec">Fechar</button></div>
+    <p class="erro" id="f-erro" role="alert" hidden></p>
+    <div class="acoes"><span class="esp"></span><button type="button" class="sec" data-fechar>Fechar</button></div>
   </div>
-</dialog>
-
-<dialog id="dlg-os">
-  <form id="form-os" class="os-form">
-    <h2 id="os-titulo">Nova OS</h2>
-
-    <div class="nf-topo">
-      <span>Nota fiscal</span>
-      <div class="seg seg-grande" role="group" aria-label="Nota fiscal">
-        <label><input type="radio" name="nf" value="0" checked><span>Sem nota fiscal</span></label>
-        <label><input type="radio" name="nf" value="1"><span>Com nota fiscal</span></label>
-      </div>
-      <small>Vale para pessoa física e jurídica. Com NF, reserva o Simples: 7,16% em venda de cadeiras e 10,52% em serviços.</small>
-      <div class="nf-emissao" id="nf-emissao" hidden>
-        <div class="seg" role="group" aria-label="NF já emitida?">
-          <label><input type="radio" name="nfe" value="0" checked><span>NF ainda não emitida</span></label>
-          <label><input type="radio" name="nfe" value="1"><span>NF já emitida</span></label>
-        </div>
-        <label id="nf-data-campo" hidden><span>Emitida em</span><input type="date" id="f-nf-data"></label>
-        <label><span>Nº da NF (opcional)</span><input id="f-nf-num" inputmode="numeric"></label>
-      </div>
-    </div>
-
-    <fieldset>
-      <legend>Cliente</legend>
-      <div class="seg" role="group" aria-label="Tipo de cliente">
-        <label><input type="radio" name="tipo" value="PF" checked><span>Pessoa Física</span></label>
-        <label><input type="radio" name="tipo" value="PJ"><span>Pessoa Jurídica</span></label>
-      </div>
-      <div class="grade">
-        <label class="grande"><span id="lbl-nome">Nome</span><input id="f-nome" list="lista-clientes" required autocomplete="off"></label>
-        <label><span id="lbl-doc">CPF (opcional)</span><input id="f-doc"></label>
-      </div>
-      <datalist id="lista-clientes"></datalist>
-    </fieldset>
-
-    <fieldset>
-      <legend>Serviço</legend>
-      <div class="grade">
-        <label><span>Categoria</span>
-          <select id="f-cat" required>
-            <option value="higienizacao">Higienização</option>
-            <option value="manutencao">Manutenção</option>
-            <option value="venda">Venda de cadeiras</option>
-            <option value="revestimento">Revestimento / Reforma</option>
-          </select></label>
-        <label><span id="lbl-data">Data de realização</span><input type="date" id="f-data" required></label>
-      </div>
-      <div class="linha-seg">
-        <span>Situação</span>
-        <div class="seg" role="group" aria-label="Situação do serviço">
-          <label><input type="radio" name="status" value="pendente"><span>Pendente (a fazer)</span></label>
-          <label><input type="radio" name="status" value="realizado" checked><span>Realizado</span></label>
-        </div>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Valores</legend>
-      <div class="grade">
-        <label><span>Preço cobrado (R$)</span><input type="number" id="f-bruto" min="0" step="0.01" inputmode="decimal" required></label>
-      </div>
-      <div class="resumo">
-        <div id="r-box-imp"><span id="r-imp-rot">Simples</span><strong id="r-imp">R$ 0,00</strong></div>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Pagamento</legend>
-      <div class="grade">
-        <label><span>Forma de pagamento</span>
-          <select id="f-forma">
-            <option value="pix">PIX</option>
-            <option value="boleto">Boleto</option>
-            <option value="ted">TED</option>
-            <option value="cartao">Cartão de crédito</option>
-            <option value="empenho">Empenho</option>
-            <option value="dinheiro">Dinheiro</option>
-            <option value="outro">Outro</option>
-          </select></label>
-        <label><span>Prazos em dias (ex.: 45/60 ou 0 = à vista)</span><input id="f-prazos" placeholder="0" inputmode="numeric"></label>
-      </div>
-      <div class="presets">
-        <button type="button" class="btn-sec" data-prazo="0">À vista</button>
-        <button type="button" class="btn-sec" data-prazo="30">30</button>
-        <button type="button" class="btn-sec" data-prazo="30/60">30/60</button>
-        <button type="button" class="btn-sec" data-prazo="45/60">45/60</button>
-        <button type="button" class="btn-sec" data-prazo="60/90">60/90</button>
-        <button type="button" id="btn-gerar">Gerar parcelas</button>
-      </div>
-      <p class="dica" id="base-prazo"></p>
-      <div id="parcelas" class="parcelas"></div>
-      <button type="button" class="btn-sec" id="btn-add-parcela">+ Adicionar parcela</button>
-      <p class="aviso" id="aviso-parcelas" hidden></p>
-    </fieldset>
-
-    <label class="obs"><span>Observações</span><textarea id="f-obs" rows="3"></textarea></label>
-    <p class="aviso" id="os-info-excluir" hidden></p>
-    <p class="erro" id="os-erro" role="alert" hidden></p>
-    <div class="acoes">
-      <button type="button" class="btn-perigo" id="btn-excluir" hidden>Excluir</button>
-      <span class="esp"></span>
-      <button type="button" class="btn-sec" id="btn-cancelar">Cancelar</button>
-      <button type="submit" id="btn-salvar">Salvar OS</button>
-    </div>
-  </form>
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
-<script src="app.js"></script>
+<script src="comum.js"></script>
+<script src="servicos.js"></script>
 <script src="despesas.js"></script>
 <script src="painel.js"></script>
-<script src="fluxo.js"></script>
-<script src="receber.js"></script>
-<script src="backup.js"></script>
 </body>
 </html>

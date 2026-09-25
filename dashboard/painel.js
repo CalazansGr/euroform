@@ -1,106 +1,82 @@
+// Painel: resumo do mês escolhido.
+// Lucro = dinheiro que ENTROU (parcelas recebidas no mês) − dinheiro que SAIU (despesas pagas no mês).
 (function () {
-  if (!window.EF) return;
-  var E = EF, $ = E.$, db = E.db, brl = E.brl, r2 = E.r2, esc = E.esc;
-  var MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  var FORMAS = { pix: 'PIX', boleto: 'Boleto', ted: 'TED', cartao: 'Cartão', empenho: 'Empenho', dinheiro: 'Dinheiro', outro: 'Outro' };
+  const { db, $, r2, brl, mesAtual, mesMais, fimDoMes, soma, esc } = App;
+  const cfg = window.EUROFORM_CONFIG;
+  const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const TIPOS = [['venda', 'Venda de cadeiras'], ['manutencao', 'Manutenção / reforma'], ['higienizacao', 'Higienização']];
+  const pct = (a) => (Math.round(a * 10000) / 100).toLocaleString('pt-BR') + '%';
 
-  function soma(arr, f) { return r2(arr.reduce(function (a, x) { return a + Number(f(x) || 0); }, 0)); }
-  function card(rot, val, sub, dest, cls) {
-    return '<div class="card' + (dest ? ' dest' : '') + '"><span>' + rot + '</span><strong class="' + (cls || '') + '">' + brl(val) + '</strong>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
+  function card(rotulo, valor, sub, extra) {
+    return `<div class="card${extra && extra.dest ? ' dest' : ''}"><span>${rotulo}</span>` +
+      `<strong class="${(extra && extra.cls) || ''}">${brl(valor)}</strong>${sub ? `<small>${sub}</small>` : ''}</div>`;
   }
-  function nomeMes(m) { return MESES[parseInt(m.slice(5), 10) - 1] + ' de ' + m.slice(0, 4); }
 
-  function carregarPainel() {
-    var mes = $('p-mes').value || E.mesAtual(), f = E.faixa(mes), hoje = E.hoje(), lim = E.somaDias(hoje, 7);
-    $('p-subtitulo').textContent = 'Resumo de ' + nomeMes(mes);
-    return E.garantirMes(mes).catch(function () {}).then(function () {
-      var av = E.textoAvisoSimples(); $('p-aviso').textContent = '⚠ ' + av; $('p-aviso').hidden = !av;
-      return Promise.all([
-        db.from('servicos').select('valor_bruto,valor_nf,com_nf,categoria,status').gte('data_servico', f[0]).lte('data_servico', f[1]),
-        db.from('despesas').select('tipo,descricao,valor,pago').gte('vencimento', f[0]).lte('vencimento', f[1]),
-        db.from('recebimentos').select('*, servicos(clientes(nome))').eq('pago', false).lte('vencimento', lim).order('vencimento'),
-        db.from('despesas').select('*').eq('pago', false).lte('vencimento', lim).order('vencimento'),
-        db.from('recebimentos').select('*, servicos(condicao_pagamento, detalhes, clientes(nome))').gte('vencimento', f[0]).lte('vencimento', f[1]).order('vencimento'),
-        db.from('recebimentos').select('vencimento,valor,pago').gte('vencimento', E.mesAtual() + '-01').lte('vencimento', E.faixa(E.mesMais(E.mesAtual(), 5))[1])
-      ]);
-    }).then(function (r) {
-      for (var i = 0; i < 6; i++) if (r[i].error) { alert('Erro ao carregar painel: ' + r[i].error.message); return; }
-      // serviço pendente (ainda a fazer) não conta como faturado no mês
-      var pendentes = r[0].data.filter(function (s) { return s.status === 'pendente'; });
-      var os = r[0].data.filter(function (s) { return s.status !== 'pendente'; }), desp = r[1].data, recMes = r[4].data;
-      var valPend = soma(pendentes, function (s) { return s.valor_bruto; });
-      var comNF = soma(os.filter(function (s) { return s.com_nf; }), function (s) { return s.valor_bruto; });
-      var semNF = soma(os.filter(function (s) { return !s.com_nf; }), function (s) { return s.valor_bruto; });
-      // Lucro = faturado − Simples das NFs do mês − todas as despesas que vencem no mês.
-      // A guia do Simples (gerada sozinha) fica de fora aqui: o Simples já foi descontado pelas NFs do mês.
-      var imp = soma(os, E.simplesDe);
-      var ehGuiaSimples = function (d) { return d.tipo === 'imposto' && (d.descricao || '').indexOf('Simples Nacional (NF de') === 0; };
-      var variaveis = soma(desp.filter(function (d) { return d.tipo === 'variavel'; }), function (d) { return d.valor; });
-      var fixas = soma(desp.filter(function (d) { return d.tipo === 'recorrente'; }), function (d) { return d.valor; });
-      var outrosImp = soma(desp.filter(function (d) { return d.tipo === 'imposto' && !ehGuiaSimples(d); }), function (d) { return d.valor; });
-      var resultado = r2(comNF + semNF - imp - variaveis - fixas - outrosImp);
-      var totRec = soma(recMes, function (x) { return x.valor; });
-      var faltaRec = soma(recMes.filter(function (x) { return !x.pago; }), function (x) { return x.valor; });
-      var totDesp = soma(desp, function (d) { return d.valor; });
-      var faltaPag = soma(desp.filter(function (d) { return !d.pago; }), function (d) { return d.valor; });
-
-      $('p-cards').innerHTML =
-        card('Faturado', r2(comNF + semNF), 'Com NF ' + brl(comNF) + '<br>Sem NF ' + brl(semNF) +
-          (pendentes.length ? '<br>+ ' + brl(valPend) + ' em ' + pendentes.length + ' serviço(s) pendente(s), fora da conta' : '')) +
-        card('Lucro líquido', resultado, 'Faturado − Simples − despesas do mês', true, resultado >= 0 ? 'pos' : 'neg') +
-        card('Falta receber no mês', faltaRec, 'de ' + brl(totRec) + ' previstos no mês') +
-        card('Falta pagar no mês', faltaPag, 'de ' + brl(totDesp) + ' em despesas no mês');
-
-      $('p-detalhes').innerHTML =
-        card('Faturado', r2(comNF + semNF), 'Serviços realizados no mês') + card('− Simples', imp, E.pct(E.cfg.ALIQUOTA_VENDA) + ' nas vendas e ' + E.pct(E.cfg.ALIQUOTA_SERVICO) + ' nos serviços com NF') +
-        card('− Fornecedores e variáveis', variaveis, 'Peças, cadeiras, tecido, estofador... que vencem no mês') +
-        card('− Despesas fixas', fixas, 'Salários, aluguel, pró-labore etc.') +
-        (outrosImp ? card('− Outros impostos', outrosImp, 'Lançados à mão em Despesas') : '') +
-        card('= Lucro líquido', resultado, '', true, resultado >= 0 ? 'pos' : 'neg');
-
-      // recebimentos por mês (seleção de mês)
-      var hm = '';
-      for (var k = 0; k < 6; k++) {
-        var m = E.mesMais(E.mesAtual(), k), fm = E.faixa(m);
-        var doMes = r[5].data.filter(function (x) { return x.vencimento >= fm[0] && x.vencimento <= fm[1]; });
-        var t = soma(doMes, function (x) { return x.valor; });
-        hm += '<button type="button" class="mes-chip' + (m === mes ? ' sel' : '') + (t ? '' : ' vazio-chip') + '" data-mes="' + m + '"><span>' + MESES[parseInt(m.slice(5), 10) - 1].slice(0, 3) + '/' + m.slice(2, 4) + '</span><strong>' + (t ? brl(t) : '—') + '</strong></button>';
-      }
-      $('p-rec-meses').innerHTML = hm;
-      $('p-rec-vazio').hidden = recMes.length > 0;
-      $('p-rec-lista').innerHTML = recMes.map(function (x) {
-        var s = x.servicos || {}, cli = s.clientes ? s.clientes.nome : 'Cliente';
-        var forma = (s.detalhes && FORMAS[s.detalhes.forma]) || '';
-        var sit = x.pago ? '<span class="tag pago">Recebido</span>' : (x.vencimento < hoje ? '<span class="tag atraso">Atrasado</span>' : '<span class="tag">A receber</span>');
-        return '<tr><td>' + E.dataBR(x.vencimento) + '</td><td>' + esc(cli) + '</td><td>' + esc(E.prazoTxt(forma, s.condicao_pagamento)) + '</td><td class="num">' + brl(Number(x.valor)) + '</td><td>' + sit + '</td></tr>';
-      }).join('');
-
-      function pend(x, titulo, sub, tab, rot, atrasado) {
-        return '<div class="pend' + (atrasado ? ' atraso' : '') + '"><div class="info"><strong>' + titulo + '</strong><small>' + (atrasado ? 'Atrasado · ' : '') + 'vence ' + E.dataBR(x.vencimento) + sub + '</small></div><b>' + brl(Number(x.valor)) +
-          '</b><button type="button" class="btn-sec" data-tab="' + tab + '" data-id="' + x.id + '">' + rot + '</button></div>';
-      }
-      $('p-receber').innerHTML = r[2].data.length ? r[2].data.map(function (x) {
-        return pend(x, esc(x.servicos && x.servicos.clientes ? x.servicos.clientes.nome : 'Cliente'), '', 'recebimentos', 'Recebido', x.vencimento < hoje);
-      }).join('') : '<p class="vazio-bloco">Nada a receber nos próximos 7 dias.</p>';
-      $('p-pagar').innerHTML = r[3].data.length ? r[3].data.map(function (x) {
-        return pend(x, esc(x.descricao), x.fornecedor ? ' · ' + esc(x.fornecedor) : '', 'despesas', 'Paga', x.vencimento < hoje);
-      }).join('') : '<p class="vazio-bloco">Nada a pagar nos próximos 7 dias.</p>';
+  function carregar() {
+    const mes = $('p-mes').value || mesAtual();
+    if (!$('p-mes').value) $('p-mes').value = mes;
+    const ini = mes + '-01', fim = fimDoMes(mes);
+    $('p-sub').textContent = 'Resumo de ' + MESES[parseInt(mes.slice(5), 10) - 1] + ' de ' + mes.slice(0, 4);
+    // despesas fixas do mês precisam existir para entrar no "falta pagar"
+    const fixos = mes <= mesMais(mesAtual(), 1) && App.gerarFixos ? App.gerarFixos(mes).catch(() => {}) : Promise.resolve();
+    return fixos.then(() => Promise.all([
+      db.from('ordens').select('id, categoria, valor, nf_emitida, gastos(parcelas(valor))').gte('data', ini).lte('data', fim),
+      db.from('parcelas').select('valor, ordem_id, gasto_id').eq('pago', true).gte('pago_em', ini).lte('pago_em', fim),
+      db.from('parcelas').select('valor, ordem_id, gasto_id').eq('pago', false).gte('vencimento', ini).lte('vencimento', fim)
+    ])).then((r) => {
+      const e = r.find((x) => x.error); if (e) { alert('Erro ao carregar o painel: ' + e.error.message); return; }
+      const [ordens, pagas, abertas] = r.map((x) => x.data);
+      mostrarResumo(ordens, pagas, abertas);
+      mostrarTipos(ordens);
+      mostrarSimples(ordens);
     });
   }
 
-  $('aba-painel').addEventListener('click', function (ev) {
-    var chip = ev.target.closest('.mes-chip');
-    if (chip) { $('p-mes').value = chip.dataset.mes; carregarPainel(); return; }
-    var b = ev.target.closest('button[data-tab]'); if (!b) return;
-    b.disabled = true;
-    var campos = b.dataset.tab === 'recebimentos' ? { pago: true, pago_em: E.hoje() } : { pago: true };
-    db.from(b.dataset.tab).update(campos).eq('id', b.dataset.id).then(function (r) {
-      if (r.error) { alert('Erro: ' + r.error.message); b.disabled = false; return; }
-      carregarPainel();
+  function mostrarResumo(ordens, pagas, abertas) {
+    const faturamento = soma(ordens);
+    const entrou = soma(pagas.filter((p) => p.ordem_id)), saiu = soma(pagas.filter((p) => p.gasto_id));
+    const faltaReceber = soma(abertas.filter((p) => p.ordem_id)), faltaPagar = soma(abertas.filter((p) => p.gasto_id));
+    const lucro = r2(entrou - saiu);
+    $('p-cards').innerHTML =
+      card('Faturamento', faturamento, `${ordens.length} ${ordens.length === 1 ? 'serviço feito' : 'serviços feitos'} no mês`) +
+      card('Entrou', entrou, faltaReceber ? `recebido dos clientes · falta receber ${brl(faltaReceber)} que vence no mês` : 'recebido dos clientes no mês', { cls: 'pos' }) +
+      card('Despesas pagas', saiu, faltaPagar ? `falta pagar ${brl(faltaPagar)} que vence no mês` : 'pagas no mês') +
+      card('Lucro do mês', lucro, 'o que entrou − o que saiu', { dest: true, cls: lucro >= 0 ? 'pos' : 'neg' });
+  }
+
+  function mostrarTipos(ordens) {
+    const linhas = TIPOS.map(([k, nome]) => {
+      const os = ordens.filter((o) => o.categoria === k);
+      const faturado = soma(os);
+      const despesas = soma(os, (o) => soma((o.gastos || []).flatMap((g) => g.parcelas || [])));
+      return { nome, qtd: os.length, faturado, despesas, lucro: r2(faturado - despesas) };
     });
-  });
-  $('p-mes').addEventListener('input', carregarPainel);
-  E.abas.painel = function () { if (!$('p-mes').value) $('p-mes').value = E.mesAtual(); carregarPainel(); };
-  // Se o login já foi resolvido antes deste script carregar, abre o painel agora.
-  if (!$('app').hidden) E.abas.painel();
+    const maior = Math.max(0, ...linhas.map((l) => l.lucro));
+    const campeao = maior > 0 ? linhas.find((l) => l.lucro === maior) : null;
+    $('p-tipos').innerHTML =
+      '<div class="tt-linha tt-cab"><span>Tipo</span><span class="n">Qtd.</span><span class="n">Valor dos serviços</span><span class="n">Despesas ligadas</span><span class="n">Lucro</span></div>' +
+      linhas.map((l) => `<div class="tt-linha${l === campeao ? ' campeao' : ''}">` +
+        `<span class="tt-nome">${esc(l.nome)}${l === campeao ? ' <em class="selo">★ mais lucro</em>' : ''}</span>` +
+        `<span class="n" data-rot="Qtd.">${l.qtd}</span>` +
+        `<span class="n" data-rot="Valor">${brl(l.faturado)}</span>` +
+        `<span class="n" data-rot="Despesas">${l.despesas ? '− ' + brl(l.despesas) : '—'}</span>` +
+        `<span class="n tt-lucro" data-rot="Lucro"><b class="${l.lucro < 0 ? 'neg' : ''}">${brl(l.lucro)}</b>` +
+        `<i class="barra" style="width:${maior > 0 && l.lucro > 0 ? Math.max(4, l.lucro / maior * 100) : 0}%"></i></span></div>`).join('');
+  }
+
+  function mostrarSimples(ordens) {
+    const comNF = ordens.filter((o) => o.nf_emitida);
+    const baseVenda = soma(comNF.filter((o) => o.categoria === 'venda'));
+    const baseServ = soma(comNF.filter((o) => o.categoria !== 'venda'));
+    const semNF = soma(ordens.filter((o) => !o.nf_emitida));
+    const iv = r2(baseVenda * cfg.ALIQUOTA_VENDA), is = r2(baseServ * cfg.ALIQUOTA_SERVICO);
+    $('p-simples').innerHTML =
+      `<div class="s-linha"><span>Vendas com NF emitida</span><span>${brl(baseVenda)} × ${pct(cfg.ALIQUOTA_VENDA)}</span><b>${brl(iv)}</b></div>` +
+      `<div class="s-linha"><span>Serviços com NF emitida</span><span>${brl(baseServ)} × ${pct(cfg.ALIQUOTA_SERVICO)}</span><b>${brl(is)}</b></div>` +
+      `<div class="s-linha s-total"><span>Simples estimado do mês</span><span></span><b>${brl(r2(iv + is))}</b></div>` +
+      (semNF ? `<p class="nota">${brl(semNF)} em serviços sem NF emitida não entram na estimativa.</p>` : '');
+  }
+
+  $('p-mes').addEventListener('input', carregar);
+  App.abas.painel = carregar;
 })();
