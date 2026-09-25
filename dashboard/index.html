@@ -139,6 +139,10 @@
         <option value="atraso">Com parcela atrasada</option>
         <option value="quitado">Quitados</option>
       </select>
+      <select id="filtro-custo">
+        <option value="">Custos: todos</option>
+        <option value="falta">Custo não lançado em despesas</option>
+      </select>
     </div>
     <p class="resumo-lista" id="resumo-os"></p>
     <div class="tabela-wrap">
@@ -231,6 +235,7 @@
       <label class="grande"><span>Vincular a uma OS (opcional)</span><select id="x-os"><option value="">— nenhuma —</option></select></label>
       <label id="x-parc-campo"><span>Parcelas (mensais)</span><input type="number" id="x-parc" min="1" max="36" step="1" value="1" inputmode="numeric"></label>
     </div>
+    <p class="dica" id="x-dica-lucro"></p>
     <div id="x-parc-box" hidden>
       <p class="sub">Uma conta a pagar por linha. Ajuste a data e o valor de cada parcela como o fornecedor combinou.</p>
       <div id="x-parcelas" class="parcelas"></div>
@@ -331,6 +336,10 @@
       <div class="resumo">
         <div id="r-box-imp"><span>Simples (10,5%)</span><strong id="r-imp">R$ 0,00</strong></div>
         <div class="lucro"><span>Lucro líquido estimado</span><strong id="r-lucro">R$ 0,00</strong></div>
+      </div>
+      <div class="custo-lancado" id="custo-lancado">
+        <span id="custo-lancado-txt"></span>
+        <button type="button" class="btn-sec" id="btn-lancar-custo" hidden>+ Lançar despesa do fornecedor</button>
       </div>
     </fieldset>
 

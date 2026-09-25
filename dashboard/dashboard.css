@@ -278,3 +278,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--acento)}
   .nf-emissao>*{flex:1 1 100%}
 }
 .parcela input[type=date],.parcela input[type=number]{min-width:0;width:100%}
+.custo-lancado{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:13px;color:#555}
+.custo-lancado:empty,.custo-lancado span:empty{display:none}
+.custo-lancado.pendente{background:#fff3cf;color:#7a5a00;padding:8px 10px;border-radius:8px}
+.custo-lancado.ok{color:#0a7a35}
+.custo-lancado button{padding:7px 12px;font-size:14px}
+.custo-aviso{display:block;font-size:11px;color:#8a5a00;font-weight:600}
+#x-dica-lucro{margin-top:-4px}

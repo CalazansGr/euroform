@@ -81,13 +81,28 @@
   });
 
   // ---------- carregar / listar ----------
+  // O Supabase devolve no máximo 1000 linhas por consulta: busca em páginas.
+  function todas(tabela, select, filtro) {
+    var lista = [];
+    function pega(ini) {
+      return filtro(db.from(tabela).select(select)).range(ini, ini + 999).then(function (r) {
+        if (r.error) throw r.error;
+        lista = lista.concat(r.data);
+        return r.data.length === 1000 ? pega(ini + 1000) : lista;
+      });
+    }
+    return pega(0);
+  }
   function carregar() {
     return Promise.all([
       db.from('servicos').select('*, clientes(nome,tipo,documento), recebimentos(*)').order('data_servico', { ascending: false }).order('criado_em', { ascending: false }),
-      db.from('clientes').select('*').order('nome')
+      db.from('clientes').select('*').order('nome'),
+      todas('despesas', 'servico_id,valor', function (q) { return q.not('servico_id', 'is', null); }).then(function (d) { return { data: d }; }, function (e) { return { error: e }; })
     ]).then(function (r) {
-      if (r[0].error || r[1].error) { alert('Erro ao carregar dados: ' + ((r[0].error || r[1].error).message)); return; }
+      if (r[0].error || r[1].error || r[2].error) { alert('Erro ao carregar dados: ' + ((r[0].error || r[1].error || r[2].error).message)); return; }
       estado.servicos = r[0].data;
+      estado.lancado = {};
+      r[2].data.forEach(function (d) { estado.lancado[d.servico_id] = r2((estado.lancado[d.servico_id] || 0) + Number(d.valor)); });
       estado.clientes = r[1].data;
       $('lista-clientes').innerHTML = estado.clientes.map(function (c) { return '<option value="' + esc(c.nome) + '">'; }).join('');
       listar();
@@ -128,17 +143,28 @@
     if (i.atrasadas) return '<span class="tag atraso">' + i.atrasadas + (i.atrasadas > 1 ? ' atrasadas' : ' atrasada') + '</span>';
     return '<span class="tag">' + (i.pagas ? 'Recebido ' + i.pagas + ' de ' + i.n : 'A receber') + '</span>';
   }
+  // Custo da OS (previsto, usado no lucro) × despesas de fornecedor lançadas e vinculadas a ela (o que vai sair do caixa).
+  function custoInfo(s) {
+    var prev = r2(Number(s.custo_total) || 0), lanc = r2((estado.lancado || {})[s.id] || 0);
+    return { prev: prev, lanc: lanc, falta: prev > 0 && lanc === 0, dif: r2(lanc - prev) };
+  }
+  function custoNota(i) {
+    if (i.falta) return '<small class="custo-aviso">nada lançado em despesas</small>';
+    if (i.lanc && i.dif) return '<small class="custo-aviso">lançado ' + brl(i.lanc) + '</small>';
+    return '';
+  }
   EF.nfTag = nfTag; EF.recInfo = recInfo; EF.CATS = CATS;
 
   function listar() {
     var q = $('busca').value.trim().toLowerCase();
-    var cat = $('filtro-cat').value, nf = $('filtro-nf').value, stt = $('filtro-status').value, fr = $('filtro-rec').value;
+    var cat = $('filtro-cat').value, nf = $('filtro-nf').value, stt = $('filtro-status').value, fr = $('filtro-rec').value, fc = $('filtro-custo').value;
     var itens = estado.servicos.filter(function (s) {
       if (cat && s.categoria !== cat) return false;
       if ($('filtro-mes').value && s.data_servico.slice(0, 7) !== $('filtro-mes').value) return false;
       if (nf === 'pend') { if (!nfPendente(s)) return false; }
       else if (nf !== '' && String(s.com_nf ? 1 : 0) !== nf) return false;
       if (stt && (s.status || 'realizado') !== stt) return false;
+      if (fc === 'falta') { var ci = custoInfo(s); if (!ci.falta && !(ci.lanc && ci.dif)) return false; }
       if (fr) {
         var ri = recInfo(s);
         if (fr === 'aberto' && !ri.aberto) return false;
@@ -164,12 +190,12 @@
         '<td>' + CATS[s.categoria] + (s.status === 'pendente' ? ' <span class="tag pendente">Pendente</span>' : '') + '</td>' +
         '<td>' + nfTag(s) + '</td>' +
         '<td class="num">' + brl(Number(s.valor_bruto)) + '</td>' +
-        '<td class="num">' + brl(Number(s.custo_total)) + '</td>' +
+        '<td class="num">' + brl(Number(s.custo_total)) + custoNota(custoInfo(s)) + '</td>' +
         '<td class="num ' + (l >= 0 ? 'pos' : 'neg') + '">' + brl(l) + '</td>' +
         '<td>' + esc(prazoTxt(forma, s.condicao_pagamento)) + ' ' + recTag(recInfo(s)) + '</td></tr>';
     }).join('');
   }
-  ['busca', 'filtro-mes', 'filtro-cat', 'filtro-nf', 'filtro-status', 'filtro-rec'].forEach(function (id) { $(id).addEventListener('input', listar); });
+  ['busca', 'filtro-mes', 'filtro-cat', 'filtro-nf', 'filtro-status', 'filtro-rec', 'filtro-custo'].forEach(function (id) { $(id).addEventListener('input', listar); });
   $('lista').addEventListener('click', function (ev) {
     var tr = ev.target.closest('tr'); if (!tr) return;
     abrirForm(estado.servicos.find(function (s) { return s.id === tr.dataset.id; }));
@@ -195,7 +221,37 @@
     $('r-lucro').textContent = brl(lucro);
     $('r-lucro').className = lucro >= 0 ? 'pos' : 'neg';
     avisoParcelas();
+    mostrarCustoLancado();
   }
+  function mostrarCustoLancado() {
+    var s = estado.editando, prev = r2(num('f-custo')), el = $('custo-lancado-txt');
+    $('btn-lancar-custo').hidden = !s;
+    if (!s) {
+      el.textContent = prev > 0 ? 'Depois de salvar, lance a despesa do fornecedor (com a data de vencimento) e vincule a esta OS: ela vai para o caixa sem descontar o lucro de novo.' : '';
+      $('custo-lancado').className = 'custo-lancado'; return;
+    }
+    var lanc = r2((estado.lancado || {})[s.id] || 0), dif = r2(lanc - prev), ok = prev > 0 && !dif;
+    var t = 'Custo previsto ' + brl(prev) + ' · lançado em despesas ' + brl(lanc);
+    if (ok) t += ' ✓';
+    else if (!lanc && prev > 0) t += '. Falta lançar a despesa do fornecedor (pra ela aparecer no caixa e no "a pagar").';
+    else if (dif > 0) t += '. Saiu ' + brl(dif) + ' a mais que o previsto: se o custo real mudou, atualize o campo Custo para o lucro ficar certo.';
+    else if (dif < 0 && lanc) t += '. Falta lançar ' + brl(-dif) + ' (ou ajuste o Custo, se ficou mais barato).';
+    el.textContent = prev > 0 || lanc ? t : '';
+    $('custo-lancado').className = 'custo-lancado' + (ok ? ' ok' : (prev > 0 || lanc ? ' pendente' : ''));
+    $('btn-lancar-custo').textContent = dif < 0 ? '+ Lançar despesa do fornecedor (' + brl(-dif) + ')' : '+ Lançar outra despesa desta OS';
+  }
+  $('btn-lancar-custo').addEventListener('click', function () {
+    var s = estado.editando; if (!s || !EF.novaDespesaDaOS) return;
+    var falta = r2(num('f-custo') - ((estado.lancado || {})[s.id] || 0));
+    EF.novaDespesaDaOS(s, falta > 0 ? falta : 0);
+  });
+  // depois de lançar/editar uma despesa, atualiza o que foi lançado para esta OS
+  EF.aposDespesa = function () {
+    return carregar().then(function () {
+      if (estado.editando) { var novo = estado.servicos.find(function (x) { return x.id === estado.editando.id; }); if (novo) estado.editando = novo; }
+      if (dlg.open) mostrarCustoLancado();
+    });
+  };
   function nfEmitida() { return radio('nf') === '1' && radio('nfe') === '1'; }
   // Os prazos (30/60/90) contam da emissão da NF, se já saiu; senão, da data do serviço.
   function dataBase() { return (nfEmitida() && $('f-nf-data').value) || $('f-data').value || hoje(); }

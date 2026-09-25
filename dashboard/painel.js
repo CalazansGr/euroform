@@ -17,7 +17,7 @@
       var av = E.textoAvisoSimples(); $('p-aviso').textContent = '⚠ ' + av; $('p-aviso').hidden = !av;
       return Promise.all([
         db.from('servicos').select('valor_bruto,com_nf,custo_total,imposto,status').gte('data_servico', f[0]).lte('data_servico', f[1]),
-        db.from('despesas').select('tipo,valor,pago').gte('vencimento', f[0]).lte('vencimento', f[1]),
+        db.from('despesas').select('tipo,valor,pago,servico_id').gte('vencimento', f[0]).lte('vencimento', f[1]),
         db.from('recebimentos').select('*, servicos(clientes(nome))').eq('pago', false).lte('vencimento', lim).order('vencimento'),
         db.from('despesas').select('*').eq('pago', false).lte('vencimento', lim).order('vencimento'),
         db.from('recebimentos').select('*, servicos(condicao_pagamento, detalhes, clientes(nome))').gte('vencimento', f[0]).lte('vencimento', f[1]).order('vencimento'),
@@ -35,7 +35,9 @@
       var imp = soma(os, function (s) { return s.imposto; });
       var lucroOS = r2(comNF + semNF - custos - imp);
       var fixas = soma(desp.filter(function (d) { return d.tipo === 'recorrente'; }), function (d) { return d.valor; });
-      var resultado = r2(lucroOS - fixas);
+      // despesa variável SEM OS (combustível, ferramenta...) desconta do lucro; COM OS não, porque o custo já está na OS
+      var outras = soma(desp.filter(function (d) { return d.tipo === 'variavel' && !d.servico_id; }), function (d) { return d.valor; });
+      var resultado = r2(lucroOS - fixas - outras);
       var totRec = soma(recMes, function (x) { return x.valor; });
       var faltaRec = soma(recMes.filter(function (x) { return !x.pago; }), function (x) { return x.valor; });
       var totDesp = soma(desp, function (d) { return d.valor; });
@@ -44,14 +46,15 @@
       $('p-cards').innerHTML =
         card('Faturado', r2(comNF + semNF), 'Com NF ' + brl(comNF) + '<br>Sem NF ' + brl(semNF) +
           (pendentes.length ? '<br>+ ' + brl(valPend) + ' em ' + pendentes.length + ' serviço(s) pendente(s), fora da conta' : '')) +
-        card('Lucro líquido', resultado, 'Depois de custos, Simples e despesas fixas', true, resultado >= 0 ? 'pos' : 'neg') +
+        card('Lucro líquido', resultado, 'Depois de custos, Simples, despesas fixas e outras despesas', true, resultado >= 0 ? 'pos' : 'neg') +
         card('Falta receber no mês', faltaRec, 'de ' + brl(totRec) + ' previstos no mês') +
         card('Falta pagar no mês', faltaPag, 'de ' + brl(totDesp) + ' em despesas no mês');
 
       $('p-detalhes').innerHTML =
         card('Faturado', r2(comNF + semNF)) + card('− Custos dos serviços', custos, 'Peças, insumos e terceiros') +
         card('− Simples estimado', imp, '10,5% das NFs do mês') + card('= Lucro dos serviços', lucroOS, '', false, lucroOS >= 0 ? 'pos' : 'neg') +
-        card('− Despesas fixas', fixas, 'Salários, aluguel etc.') + card('= Lucro líquido', resultado, '', true, resultado >= 0 ? 'pos' : 'neg');
+        card('− Despesas fixas', fixas, 'Salários, aluguel etc.') + card('− Outras despesas', outras, 'Variáveis sem OS (combustível, ferramentas...)') +
+        card('= Lucro líquido', resultado, '', true, resultado >= 0 ? 'pos' : 'neg');
 
       // recebimentos por mês (seleção de mês)
       var hm = '';
