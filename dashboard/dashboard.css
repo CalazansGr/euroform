@@ -151,10 +151,9 @@ h3 small{margin-left:6px}
   .t-servicos td:nth-child(3){grid-column:1;grid-row:2;text-align:left;color:#555}
   .t-servicos td:nth-child(1){grid-column:2;grid-row:2;color:#777;font-size:13px}
   .t-servicos td:nth-child(4){grid-column:1;grid-row:3;text-align:left}
-  .t-servicos td:nth-child(7){grid-column:2;grid-row:3}
-  .t-servicos td:nth-child(7)::before{display:inline;content:"Lucro ";font-weight:400;color:#777}
-  .t-servicos td:nth-child(6){display:none}
-  .t-servicos td:nth-child(8){grid-column:1 / -1;grid-row:4;text-align:left;color:#777;font-size:13px}
+  .t-servicos td:nth-child(6){grid-column:2;grid-row:3}
+  .t-servicos td:nth-child(6)::before{display:inline;content:"Líquido ";font-weight:400;color:#777}
+  .t-servicos td:nth-child(7){grid-column:1 / -1;grid-row:4;text-align:left;color:#777;font-size:13px}
   /* Despesas: cartão compacto */
   .t-despesas tbody tr{display:grid;grid-template-columns:1fr auto;gap:3px 12px;align-items:center}
   .t-despesas td{display:block;padding:0}
@@ -278,10 +277,3 @@ input:focus,select:focus,textarea:focus{border-color:var(--acento)}
   .nf-emissao>*{flex:1 1 100%}
 }
 .parcela input[type=date],.parcela input[type=number]{min-width:0;width:100%}
-.custo-lancado{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:13px;color:#555}
-.custo-lancado:empty,.custo-lancado span:empty{display:none}
-.custo-lancado.pendente{background:#fff3cf;color:#7a5a00;padding:8px 10px;border-radius:8px}
-.custo-lancado.ok{color:#0a7a35}
-.custo-lancado button{padding:7px 12px;font-size:14px}
-.custo-aviso{display:block;font-size:11px;color:#8a5a00;font-weight:600}
-#x-dica-lucro{margin-top:-4px}

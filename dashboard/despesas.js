@@ -176,7 +176,6 @@
     }
     $('x-parc-campo').hidden = !!d;   // parcelar só ao lançar; depois cada parcela é editada separadamente
     reiniciarParcelas();
-    dicaLucro();
     dlg.showModal();
     if (!d) $('x-desc').focus();
   }
@@ -250,24 +249,6 @@
     } else avisoParc();
   });
   $('btn-nova-desp').addEventListener('click', function () { abrirDesp(null); });
-  // Aberto a partir de uma OS: já vem vinculado a ela, com o valor que falta lançar.
-  E.novaDespesaDaOS = function (s, valor) {
-    abrirDesp(null);
-    $('x-tipo').value = 'variavel'; $('x-os').value = s.id;
-    if (valor > 0) $('x-valor').value = valor;
-    dicaLucro();
-  };
-  // Explica como cada despesa entra na conta (evita contar o fornecedor duas vezes).
-  function dicaLucro() {
-    var t = $('x-tipo').value, os = $('x-os').value, txt = '';
-    if (t === 'variavel' && os) txt = 'Vinculada à OS: vai para o caixa e o "a pagar", mas não desconta do lucro de novo (o custo já está na OS).';
-    else if (t === 'variavel') txt = 'Sem OS: desconta do lucro do mês como "outras despesas" (combustível, ferramenta...). Se for peça ou produto de um serviço, escolha a OS acima.';
-    else if (t === 'recorrente') txt = 'Despesa fixa: desconta do lucro do mês.';
-    else txt = 'Imposto: entra no caixa. O lucro já desconta o Simples de cada OS com NF.';
-    $('x-dica-lucro').textContent = txt;
-  }
-  ['x-tipo', 'x-os'].forEach(function (id) { $(id).addEventListener('change', dicaLucro); });
-
   $('btn-cancelar-desp').addEventListener('click', function () { dlg.close(); });
 
   $('form-desp').addEventListener('submit', function (ev) {
@@ -293,7 +274,6 @@
       dlg.close();
       var m = reg.vencimento.slice(0, 7); if ($('d-mes').value !== m) $('d-mes').value = m;
       carregarDesp();
-      if (E.aposDespesa) E.aposDespesa();   // atualiza "custo lançado" das OS
     });
   });
   $('btn-excluir-desp').addEventListener('click', function () {
@@ -302,7 +282,6 @@
       db.from('despesas').delete().eq('id', st.editando.id).then(function (r) {
         if (r.error) { E.mostrarErro($('desp-erro'), 'Erro ao excluir: ' + r.error.message); return; }
         dlg.close(); carregarDesp();
-        if (E.aposDespesa) E.aposDespesa();
       });
     });
   });

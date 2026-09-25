@@ -139,15 +139,11 @@
         <option value="atraso">Com parcela atrasada</option>
         <option value="quitado">Quitados</option>
       </select>
-      <select id="filtro-custo">
-        <option value="">Custos: todos</option>
-        <option value="falta">Custo não lançado em despesas</option>
-      </select>
     </div>
     <p class="resumo-lista" id="resumo-os"></p>
     <div class="tabela-wrap">
       <table class="tabela t-servicos">
-        <thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>NF</th><th class="num">Bruto</th><th class="num">Custo</th><th class="num">Lucro est.</th><th>Recebimento</th></tr></thead>
+        <thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>NF</th><th class="num">Valor</th><th class="num">Líquido</th><th>Recebimento</th></tr></thead>
         <tbody id="lista"></tbody>
       </table>
       <p class="vazio" id="vazio" hidden>Nenhuma OS encontrada.</p>
@@ -228,14 +224,14 @@
       <label><span>Vencimento</span><input type="date" id="x-venc" required></label>
       <label><span>Tipo</span>
         <select id="x-tipo">
-          <option value="variavel">Variável (de um serviço)</option>
+          <option value="variavel">Variável (fornecedor, peças, estofador...)</option>
           <option value="recorrente">Fixa (avulsa)</option>
           <option value="imposto">Imposto</option>
         </select></label>
       <label class="grande"><span>Vincular a uma OS (opcional)</span><select id="x-os"><option value="">— nenhuma —</option></select></label>
       <label id="x-parc-campo"><span>Parcelas (mensais)</span><input type="number" id="x-parc" min="1" max="36" step="1" value="1" inputmode="numeric"></label>
     </div>
-    <p class="dica" id="x-dica-lucro"></p>
+    <p class="dica">Toda despesa desconta do lucro do mês em que vence. Vincular a uma OS é opcional, só para saber de qual serviço ela é.</p>
     <div id="x-parc-box" hidden>
       <p class="sub">Uma conta a pagar por linha. Ajuste a data e o valor de cada parcela como o fornecedor combinou.</p>
       <div id="x-parcelas" class="parcelas"></div>
@@ -331,15 +327,10 @@
       <legend>Valores</legend>
       <div class="grade">
         <label><span>Preço cobrado (R$)</span><input type="number" id="f-bruto" min="0" step="0.01" inputmode="decimal" required></label>
-        <label><span>Custo (R$)</span><input type="number" id="f-custo" min="0" step="0.01" inputmode="decimal"></label>
       </div>
       <div class="resumo">
         <div id="r-box-imp"><span>Simples (10,5%)</span><strong id="r-imp">R$ 0,00</strong></div>
-        <div class="lucro"><span>Lucro líquido estimado</span><strong id="r-lucro">R$ 0,00</strong></div>
-      </div>
-      <div class="custo-lancado" id="custo-lancado">
-        <span id="custo-lancado-txt"></span>
-        <button type="button" class="btn-sec" id="btn-lancar-custo" hidden>+ Lançar despesa do fornecedor</button>
+        <div class="lucro"><span>Fica pra empresa (depois do Simples)</span><strong id="r-lucro">R$ 0,00</strong></div>
       </div>
     </fieldset>
 

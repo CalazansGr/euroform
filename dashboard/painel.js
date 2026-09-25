@@ -16,8 +16,8 @@
     return E.garantirMes(mes).catch(function () {}).then(function () {
       var av = E.textoAvisoSimples(); $('p-aviso').textContent = '⚠ ' + av; $('p-aviso').hidden = !av;
       return Promise.all([
-        db.from('servicos').select('valor_bruto,com_nf,custo_total,imposto,status').gte('data_servico', f[0]).lte('data_servico', f[1]),
-        db.from('despesas').select('tipo,valor,pago,servico_id').gte('vencimento', f[0]).lte('vencimento', f[1]),
+        db.from('servicos').select('valor_bruto,com_nf,imposto,status').gte('data_servico', f[0]).lte('data_servico', f[1]),
+        db.from('despesas').select('tipo,descricao,valor,pago').gte('vencimento', f[0]).lte('vencimento', f[1]),
         db.from('recebimentos').select('*, servicos(clientes(nome))').eq('pago', false).lte('vencimento', lim).order('vencimento'),
         db.from('despesas').select('*').eq('pago', false).lte('vencimento', lim).order('vencimento'),
         db.from('recebimentos').select('*, servicos(condicao_pagamento, detalhes, clientes(nome))').gte('vencimento', f[0]).lte('vencimento', f[1]).order('vencimento'),
@@ -31,13 +31,14 @@
       var valPend = soma(pendentes, function (s) { return s.valor_bruto; });
       var comNF = soma(os.filter(function (s) { return s.com_nf; }), function (s) { return s.valor_bruto; });
       var semNF = soma(os.filter(function (s) { return !s.com_nf; }), function (s) { return s.valor_bruto; });
-      var custos = soma(os, function (s) { return s.custo_total; });
+      // Lucro = faturado − Simples das NFs do mês − todas as despesas que vencem no mês.
+      // A guia do Simples (gerada sozinha) fica de fora aqui: o Simples já foi descontado pelas NFs do mês.
       var imp = soma(os, function (s) { return s.imposto; });
-      var lucroOS = r2(comNF + semNF - custos - imp);
+      var ehGuiaSimples = function (d) { return d.tipo === 'imposto' && (d.descricao || '').indexOf('Simples Nacional (NF de') === 0; };
+      var variaveis = soma(desp.filter(function (d) { return d.tipo === 'variavel'; }), function (d) { return d.valor; });
       var fixas = soma(desp.filter(function (d) { return d.tipo === 'recorrente'; }), function (d) { return d.valor; });
-      // despesa variável SEM OS (combustível, ferramenta...) desconta do lucro; COM OS não, porque o custo já está na OS
-      var outras = soma(desp.filter(function (d) { return d.tipo === 'variavel' && !d.servico_id; }), function (d) { return d.valor; });
-      var resultado = r2(lucroOS - fixas - outras);
+      var outrosImp = soma(desp.filter(function (d) { return d.tipo === 'imposto' && !ehGuiaSimples(d); }), function (d) { return d.valor; });
+      var resultado = r2(comNF + semNF - imp - variaveis - fixas - outrosImp);
       var totRec = soma(recMes, function (x) { return x.valor; });
       var faltaRec = soma(recMes.filter(function (x) { return !x.pago; }), function (x) { return x.valor; });
       var totDesp = soma(desp, function (d) { return d.valor; });
@@ -46,14 +47,15 @@
       $('p-cards').innerHTML =
         card('Faturado', r2(comNF + semNF), 'Com NF ' + brl(comNF) + '<br>Sem NF ' + brl(semNF) +
           (pendentes.length ? '<br>+ ' + brl(valPend) + ' em ' + pendentes.length + ' serviço(s) pendente(s), fora da conta' : '')) +
-        card('Lucro líquido', resultado, 'Depois de custos, Simples, despesas fixas e outras despesas', true, resultado >= 0 ? 'pos' : 'neg') +
+        card('Lucro líquido', resultado, 'Faturado − Simples − despesas do mês', true, resultado >= 0 ? 'pos' : 'neg') +
         card('Falta receber no mês', faltaRec, 'de ' + brl(totRec) + ' previstos no mês') +
         card('Falta pagar no mês', faltaPag, 'de ' + brl(totDesp) + ' em despesas no mês');
 
       $('p-detalhes').innerHTML =
-        card('Faturado', r2(comNF + semNF)) + card('− Custos dos serviços', custos, 'Peças, insumos e terceiros') +
-        card('− Simples estimado', imp, '10,5% das NFs do mês') + card('= Lucro dos serviços', lucroOS, '', false, lucroOS >= 0 ? 'pos' : 'neg') +
-        card('− Despesas fixas', fixas, 'Salários, aluguel etc.') + card('− Outras despesas', outras, 'Variáveis sem OS (combustível, ferramentas...)') +
+        card('Faturado', r2(comNF + semNF), 'Serviços realizados no mês') + card('− Simples', imp, '10,5% das NFs do mês') +
+        card('− Fornecedores e variáveis', variaveis, 'Peças, cadeiras, tecido, estofador... que vencem no mês') +
+        card('− Despesas fixas', fixas, 'Salários, aluguel, pró-labore etc.') +
+        (outrosImp ? card('− Outros impostos', outrosImp, 'Lançados à mão em Despesas') : '') +
         card('= Lucro líquido', resultado, '', true, resultado >= 0 ? 'pos' : 'neg');
 
       // recebimentos por mês (seleção de mês)
