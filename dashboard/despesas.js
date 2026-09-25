@@ -175,33 +175,79 @@
       $('x-venc').value = E.hoje();
     }
     $('x-parc-campo').hidden = !!d;   // parcelar só ao lançar; depois cada parcela é editada separadamente
-    previaParcelas();
+    reiniciarParcelas();
     dlg.showModal();
     if (!d) $('x-desc').focus();
   }
 
-  // ---- parcelamento: divide o valor total em N despesas, uma por mês a partir do 1º vencimento ----
+  // ---- parcelamento: N contas a pagar; começa mensal, mas cada data/valor/pago pode ser ajustado ----
+  var manual = false;   // true depois que a pessoa mexe numa parcela: para de refazer sozinho
   function nParcelas() { return st.editando ? 1 : Math.max(1, Math.min(36, parseInt($('x-parc').value, 10) || 1)); }
   function montarParcelas(total, venc, n) {
     var p = venc.split('-').map(Number), dia = p[2], mes0 = venc.slice(0, 7);
     var base = r2(Math.floor(total / n * 100) / 100), soma = 0, lista = [];
     for (var i = 0; i < n; i++) {
       var v = i === n - 1 ? r2(total - soma) : base; soma = r2(soma + v);   // centavos que sobram vão na última
-      lista.push({ valor: v, vencimento: dataNoMes(mesMais(mes0, i), dia) });
+      lista.push({ valor: v, vencimento: dataNoMes(mesMais(mes0, i), dia), pago: false });
     }
     return lista;
   }
-  function previaParcelas() {
-    var n = nParcelas(), venc = $('x-venc').value;
-    $('x-pago-txt').textContent = n > 1 ? '1ª parcela já foi paga' : 'Já foi paga';
-    $('x-valor').previousElementSibling.textContent = n > 1 ? 'Valor total (R$)' : 'Valor (R$)';
-    if (n < 2 || !venc) { $('x-parc-previa').hidden = true; return; }
-    var ps = montarParcelas(r2(E.num('x-valor')), venc, n);
-    $('x-parc-previa').textContent = n + 'x: ' + ps.map(function (x) { return E.dataBR(x.vencimento) + ' ' + brl(x.valor); }).join(' · ') +
-      '. Cada parcela vira uma conta a pagar separada (dá pra ajustar data e valor de cada uma depois).';
-    $('x-parc-previa').hidden = false;
+  function linhaParc(p) {
+    var d = document.createElement('div'); d.className = 'parcela';
+    d.innerHTML = '<input type="date" class="xp-venc" required><input type="number" class="xp-valor" min="0" step="0.01" inputmode="decimal" required>' +
+      '<label><input type="checkbox" class="xp-pago"> Paga</label><button type="button" class="btn-perigo xp-del" aria-label="Remover parcela">✕</button>';
+    d.querySelector('.xp-venc').value = p.vencimento || '';
+    d.querySelector('.xp-valor').value = p.valor;
+    d.querySelector('.xp-pago').checked = !!p.pago;
+    return d;
   }
-  ['x-parc', 'x-valor', 'x-venc'].forEach(function (id) { $(id).addEventListener('input', previaParcelas); });
+  function lerParc() {
+    return Array.prototype.map.call($('x-parcelas').children, function (d) {
+      return { vencimento: d.querySelector('.xp-venc').value, valor: r2(parseFloat(d.querySelector('.xp-valor').value) || 0), pago: d.querySelector('.xp-pago').checked };
+    });
+  }
+  function avisoParc() {
+    var ps = lerParc(), soma = r2(ps.reduce(function (a, p) { return a + p.valor; }, 0)), total = r2(E.num('x-valor'));
+    var dif = r2(soma - total);
+    $('x-parc-aviso').hidden = dif === 0;
+    $('x-parc-aviso').textContent = 'As parcelas somam ' + brl(soma) + ', diferente do valor total (' + brl(total) + ').';
+  }
+  function mostrarParc(n) {
+    var multi = n > 1;
+    $('x-parc-box').hidden = !multi; $('x-pago-lbl').hidden = multi;
+    $('x-valor').previousElementSibling.textContent = multi ? 'Valor total (R$)' : 'Valor (R$)';
+    $('x-venc').previousElementSibling.textContent = multi ? '1º vencimento' : 'Vencimento';
+  }
+  function desenharParcelas() {
+    var n = nParcelas(), venc = $('x-venc').value;
+    mostrarParc(n);
+    if (n < 2) return;
+    var box = $('x-parcelas'); box.innerHTML = '';
+    montarParcelas(r2(E.num('x-valor')), venc || E.hoje(), n).forEach(function (p) { box.appendChild(linhaParc(p)); });
+    avisoParc();
+  }
+  function reiniciarParcelas() { manual = false; $('x-parc').value = 1; $('x-parcelas').innerHTML = ''; mostrarParc(1); }
+  $('x-parc').addEventListener('input', function () { manual = false; desenharParcelas(); });
+  ['x-valor', 'x-venc'].forEach(function (id) {
+    $(id).addEventListener('input', function () { if (!manual) desenharParcelas(); else avisoParc(); });
+  });
+  $('x-parc-refazer').addEventListener('click', function () { manual = false; desenharParcelas(); });
+  $('x-parc-add').addEventListener('click', function () {
+    var ps = lerParc(), ult = ps.length ? ps[ps.length - 1].vencimento : ($('x-venc').value || E.hoje());
+    manual = true; $('x-parcelas').appendChild(linhaParc({ vencimento: E.somaDias(ult, 7), valor: 0, pago: false }));
+    $('x-parc').value = $('x-parcelas').children.length; avisoParc();
+  });
+  $('x-parcelas').addEventListener('input', function () { manual = true; avisoParc(); });
+  $('x-parcelas').addEventListener('click', function (ev) {
+    if (!ev.target.classList.contains('xp-del')) return;
+    manual = true; ev.target.closest('.parcela').remove();
+    var ps = lerParc();
+    $('x-parc').value = Math.max(1, ps.length);
+    if (ps.length < 2) {   // sobrou uma só: volta ao lançamento simples
+      if (ps[0]) { $('x-venc').value = ps[0].vencimento; $('x-valor').value = ps[0].valor; $('x-pago').checked = ps[0].pago; }
+      reiniciarParcelas();
+    } else avisoParc();
+  });
   $('btn-nova-desp').addEventListener('click', function () { abrirDesp(null); });
   $('btn-cancelar-desp').addEventListener('click', function () { dlg.close(); });
 
@@ -214,8 +260,13 @@
     var n = nParcelas(), q;
     if (st.editando) q = db.from('despesas').update(reg).eq('id', st.editando.id);
     else if (n > 1) {
-      q = db.from('despesas').insert(montarParcelas(reg.valor, reg.vencimento, n).map(function (x, i) {
-        return Object.assign({}, reg, { descricao: reg.descricao + ' (' + (i + 1) + '/' + n + ')', valor: x.valor, vencimento: x.vencimento, pago: i === 0 && reg.pago });
+      var ps = lerParc().sort(function (a, b) { return a.vencimento < b.vencimento ? -1 : 1; });
+      if (ps.some(function (p) { return !p.vencimento; })) { E.mostrarErro($('desp-erro'), 'Toda parcela precisa de uma data de vencimento.'); return; }
+      var somaP = r2(ps.reduce(function (a, p) { return a + p.valor; }, 0));
+      if (somaP !== reg.valor) { E.mostrarErro($('desp-erro'), 'As parcelas somam ' + brl(somaP) + ', mas o valor total é ' + brl(reg.valor) + '. Ajuste os valores ou clique em "Refazer mensais iguais".'); return; }
+      reg.vencimento = ps[0].vencimento;
+      q = db.from('despesas').insert(ps.map(function (p, i) {
+        return Object.assign({}, reg, { descricao: reg.descricao + ' (' + (i + 1) + '/' + ps.length + ')', valor: p.valor, vencimento: p.vencimento, pago: p.pago });
       }));
     } else q = db.from('despesas').insert(reg);
     q.then(function (r) {

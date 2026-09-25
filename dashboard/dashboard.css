@@ -223,3 +223,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--acento)}
 .nf-topo>span{font-weight:700}
 .nf-topo small{flex:1 1 100%;color:#7a5a00}
 .seg-grande span{padding:11px 20px;font-size:15px}
+.acoes-parc{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+#x-parc-box{margin-top:6px}
+#x-parc-box .parcelas{margin-top:8px}
