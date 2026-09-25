@@ -14,6 +14,7 @@
     var mes = $('p-mes').value || E.mesAtual(), f = E.faixa(mes), hoje = E.hoje(), lim = E.somaDias(hoje, 7);
     $('p-subtitulo').textContent = 'Resumo de ' + nomeMes(mes);
     return E.garantirMes(mes).catch(function () {}).then(function () {
+      var av = E.textoAvisoSimples(); $('p-aviso').textContent = '⚠ ' + av; $('p-aviso').hidden = !av;
       return Promise.all([
         db.from('servicos').select('valor_bruto,com_nf,custo_total,imposto').gte('data_servico', f[0]).lte('data_servico', f[1]),
         db.from('despesas').select('tipo,valor,pago').gte('vencimento', f[0]).lte('vencimento', f[1]),

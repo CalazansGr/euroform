@@ -13,33 +13,94 @@
   function dataNoMes(mes, dia) { return mes + '-' + String(Math.min(dia, ultimoDia(mes))).padStart(2, '0'); }
   function faixa(mes) { return [mes + '-01', mes + '-' + String(ultimoDia(mes)).padStart(2, '0')]; }
 
-  // ---- gera despesas fixas e Simples do mês (sem duplicar) ----
-  function garantirMes(mes) {
-    if (mes > mesMais(mesAtual(), 1)) return Promise.resolve();
-    var f = faixa(mes), ant = faixa(mesMais(mes, -1));
-    return Promise.all([
-      db.from('recorrentes').select('*').eq('ativo', true),
-      db.from('despesas').select('*').gte('vencimento', f[0]).lte('vencimento', f[1]),
-      db.from('servicos').select('valor_nf').eq('com_nf', true).gte('data_servico', ant[0]).lte('data_servico', ant[1])
-    ]).then(function (r) {
-      for (var i = 0; i < 3; i++) if (r[i].error) throw r[i].error;
-      var novas = [], ops = [];
-      r[0].data.forEach(function (rec) {
-        var existe = r[1].data.some(function (d) { return d.recorrente_id === rec.id; });
-        if (!existe) novas.push({ tipo: 'recorrente', descricao: rec.descricao, valor: rec.valor, vencimento: dataNoMes(mes, rec.dia_vencimento), recorrente_id: rec.id, pago: false });
+  // ---- sincronização automática: Simples (derivado das OS) e despesas fixas ----
+  var MARCA_SIMPLES = 'Simples Nacional (NF de';
+  function pagina(tabela, select, filtro) {
+    var todas = [];
+    function pega(ini) {
+      var q = db.from(tabela).select(select);
+      if (filtro) q = filtro(q);
+      return q.range(ini, ini + 999).then(function (r) {
+        if (r.error) throw r.error;
+        todas = todas.concat(r.data);
+        return r.data.length === 1000 ? pega(ini + 1000) : todas;
       });
-      var base = r2(r[2].data.reduce(function (a, s) { return a + Number(s.valor_nf || 0); }, 0));
-      var simples = r2(base * E.ALIQ);
-      var atual = r[1].data.filter(function (d) { return d.tipo === 'imposto'; })[0];
-      if (simples > 0) {
-        var desc = 'Simples Nacional (NF de ' + mesMais(mes, -1).split('-').reverse().join('/') + ')';
-        if (!atual) novas.push({ tipo: 'imposto', descricao: desc, fornecedor: 'Receita Federal', valor: simples, vencimento: dataNoMes(mes, E.cfg.DIA_VENCIMENTO_SIMPLES || 20), pago: false });
-        else if (!atual.pago && Number(atual.valor) !== simples) ops.push(db.from('despesas').update({ valor: simples, descricao: desc }).eq('id', atual.id));
-      }
-      if (novas.length) ops.push(db.from('despesas').insert(novas));
+    }
+    return pega(0);
+  }
+  function checar(rs) { (rs || []).forEach(function (x) { if (x && x.error) throw x.error; }); }
+
+  // O Simples de cada mês é SEMPRE calculado a partir das OS com NF do mês anterior.
+  // Cria, atualiza ou remove a linha (se ainda não paga) para nunca ficar valor "fantasma".
+  function reconciliarSimples() {
+    return Promise.all([
+      pagina('servicos', 'valor_nf,data_servico', function (q) { return q.eq('com_nf', true); }),
+      pagina('despesas', '*', function (q) { return q.eq('tipo', 'imposto').like('descricao', MARCA_SIMPLES + '%'); })
+    ]).then(function (r) {
+      var esperado = {}, linhas = {}, meses = {}, avisos = [], ops = [];
+      r[0].forEach(function (s) { var m = mesMais(s.data_servico.slice(0, 7), 1); esperado[m] = (esperado[m] || 0) + Number(s.valor_nf || 0); meses[m] = 1; });
+      r[1].forEach(function (d) { var m = d.vencimento.slice(0, 7); (linhas[m] = linhas[m] || []).push(d); meses[m] = 1; });
+      var limite = mesMais(mesAtual(), 1);
+      Object.keys(meses).forEach(function (m) {
+        var exp = r2((esperado[m] || 0) * E.ALIQ), rows = (linhas[m] || []).sort(function (a, b) { return (b.pago ? 1 : 0) - (a.pago ? 1 : 0); });
+        var manter = rows[0];
+        rows.slice(1).forEach(function (d) { if (!d.pago) ops.push(db.from('despesas').delete().eq('id', d.id)); });   // duplicadas
+        var desc = MARCA_SIMPLES + ' ' + mesMais(m, -1).split('-').reverse().join('/') + ')';
+        if (exp > 0) {
+          if (!manter) { if (m <= limite) ops.push(db.from('despesas').insert({ tipo: 'imposto', descricao: desc, fornecedor: 'Receita Federal', valor: exp, vencimento: dataNoMes(m, E.cfg.DIA_VENCIMENTO_SIMPLES || 20), pago: false })); }
+          else if (!manter.pago) { if (Number(manter.valor) !== exp || manter.descricao !== desc) ops.push(db.from('despesas').update({ valor: exp, descricao: desc }).eq('id', manter.id)); }
+          else if (Number(manter.valor) !== exp) avisos.push({ mes: m, pago: Number(manter.valor), calculado: exp });
+        } else if (manter) {
+          if (!manter.pago) ops.push(db.from('despesas').delete().eq('id', manter.id));
+          else avisos.push({ mes: m, pago: Number(manter.valor), calculado: 0 });
+        }
+      });
+      E.avisosSimples = avisos;
       return Promise.all(ops);
-    }).then(function (rs) {
-      (rs || []).forEach(function (x) { if (x && x.error) throw x.error; });
+    }).then(checar);
+  }
+  var sincCache = null, sincTimer = null;
+  E.invalidarSinc = function () { sincCache = null; clearTimeout(sincTimer); };
+  function sincSimples() {
+    if (!sincCache) {
+      sincCache = reconciliarSimples();
+      sincCache.catch(function () { sincCache = null; });
+      clearTimeout(sincTimer); sincTimer = setTimeout(function () { sincCache = null; }, 3000);
+    }
+    return sincCache;
+  }
+  E.textoAvisoSimples = function () {
+    return (E.avisosSimples || []).map(function (a) {
+      return 'Simples de ' + a.mes.split('-').reverse().join('/') + ' já foi pago com ' + brl(a.pago) + ', mas o cálculo atual das OS é ' + brl(a.calculado) + '. Confira as OS ou ajuste a despesa.';
+    }).join(' ');
+  };
+
+  // Gera as despesas fixas do mês (uma por fixa) e remove duplicatas em aberto.
+  var fila = Promise.resolve();   // uma geração por vez neste navegador (evita duplicar em cliques rápidos)
+  function garantirMes(mes) {
+    var p = fila.then(function () { return garantirMesReal(mes); });
+    fila = p.catch(function () {});
+    return p;
+  }
+  function garantirMesReal(mes) {
+    return sincSimples().then(function () {
+      if (mes > mesMais(mesAtual(), 1)) return;
+      var f = faixa(mes);
+      return Promise.all([
+        db.from('recorrentes').select('*').eq('ativo', true),
+        db.from('despesas').select('*').gte('vencimento', f[0]).lte('vencimento', f[1]).not('recorrente_id', 'is', null)
+      ]).then(function (r) {
+        if (r[0].error) throw r[0].error; if (r[1].error) throw r[1].error;
+        var novas = [], ops = [], vistos = {};
+        r[1].data.sort(function (a, b) { return (b.pago ? 1 : 0) - (a.pago ? 1 : 0); }).forEach(function (d) {
+          if (vistos[d.recorrente_id]) { if (!d.pago) ops.push(db.from('despesas').delete().eq('id', d.id)); } else vistos[d.recorrente_id] = 1;
+        });
+        r[0].data.forEach(function (rec) {
+          if (!vistos[rec.id]) novas.push({ tipo: 'recorrente', descricao: rec.descricao, valor: rec.valor, vencimento: dataNoMes(mes, rec.dia_vencimento), recorrente_id: rec.id, pago: false });
+        });
+        if (novas.length) ops.push(db.from('despesas').insert(novas));
+        return Promise.all(ops).then(checar);
+      });
     });
   }
 
@@ -48,6 +109,7 @@
     var mes = $('d-mes').value || mesAtual(), f = faixa(mes);
     return garantirMes(mes).catch(function (e) { alert('Erro ao gerar despesas do mês: ' + (e.message || e)); })
       .then(function () {
+        var av = E.textoAvisoSimples(); $('d-aviso').textContent = '⚠ ' + av; $('d-aviso').hidden = !av;
         return db.from('despesas').select('*, servicos(data_servico, clientes(nome))').gte('vencimento', f[0]).lte('vencimento', f[1]).order('vencimento');
       }).then(function (r) {
         if (r.error) { alert('Erro ao carregar despesas: ' + r.error.message); return; }
@@ -89,10 +151,19 @@
     $('desp-titulo').textContent = d ? 'Editar despesa' : 'Nova despesa';
     $('btn-excluir-desp').hidden = !d;
     $('desp-info').hidden = !d;
+    var autoSimples = !!d && d.tipo === 'imposto' && (d.descricao || '').indexOf(MARCA_SIMPLES) === 0;
+    ['x-valor', 'x-desc', 'x-tipo', 'x-venc'].forEach(function (id) { $(id).readOnly = false; $(id).disabled = false; });
     if (d) {
       var sit = d.pago ? 'Paga' : (d.vencimento < E.hoje() ? 'Atrasada' : 'A pagar');
       var origem = d.recorrente_id ? 'gerada automaticamente da despesa fixa' : (d.tipo === 'imposto' ? 'gerada automaticamente (Simples)' : 'lançada manualmente');
       $('desp-info').textContent = 'Situação: ' + sit + ' · ' + origem;
+      if (autoSimples) {
+        $('desp-info').textContent += '. O valor é calculado pelas OS com NF do mês anterior e se atualiza sozinho até você marcar como paga. Para mudar o valor, ajuste as OS. Esta linha não pode ser excluída.';
+        ['x-valor', 'x-desc', 'x-tipo'].forEach(function (id) { $(id).disabled = true; });
+        $('btn-excluir-desp').hidden = true;
+      } else if (d.recorrente_id) {
+        $('desp-info').textContent += '. Se excluir, ela é recriada ao reabrir o mês; para parar de vez, pause ou exclua a despesa fixa em "Despesas fixas".';
+      }
     }
     $('x-os').innerHTML = '<option value="">— nenhuma —</option>' + E.estado.servicos.map(function (s) {
       return '<option value="' + s.id + '">' + E.dataBR(s.data_servico) + ' · ' + esc(s.clientes ? s.clientes.nome : '—') + ' · ' + esc(s.categoria) + '</option>';
@@ -146,6 +217,8 @@
       }).join('') : '<p class="vazio">Nenhuma despesa fixa cadastrada.</p>';
     });
   }
+  // remove as linhas geradas ainda em aberto que vencem de hoje em diante (as pagas e as atrasadas ficam)
+  function limparFuturas(id) { return db.from('despesas').delete().eq('recorrente_id', id).eq('pago', false).gte('vencimento', E.hoje()); }
   $('btn-recorrentes').addEventListener('click', function () { E.mostrarErro($('rec-erro'), ''); carregarRec(); dlgRec.showModal(); });
   $('btn-fechar-rec').addEventListener('click', function () { dlgRec.close(); });
   dlgRec.addEventListener('close', carregarDesp);
@@ -181,10 +254,12 @@
       }).then(function () { E.mostrarErro($('rec-erro'), ''); carregarRec(); })
         .catch(function (e) { E.mostrarErro($('rec-erro'), 'Erro ao salvar: ' + (e.message || e)); });
     } else if (ev.target.classList.contains('rec-toggle')) {
-      db.from('recorrentes').update({ ativo: !x.ativo }).eq('id', x.id).then(carregarRec);
+      db.from('recorrentes').update({ ativo: !x.ativo }).eq('id', x.id).then(function () {
+        return x.ativo ? limparFuturas(x.id) : null;   // ao pausar, some o que ainda vai vencer
+      }).then(carregarRec);
     } else if (ev.target.classList.contains('rec-del')) {
       E.confirmar(ev.target, 'Confirmar?', function () {
-        db.from('despesas').update({ recorrente_id: null }).eq('recorrente_id', x.id)
+        limparFuturas(x.id).then(function () { return db.from('despesas').update({ recorrente_id: null }).eq('recorrente_id', x.id); })
           .then(function () { return db.from('recorrentes').delete().eq('id', x.id); }).then(carregarRec);
       });
     }

@@ -22,7 +22,7 @@
     var p = iso.split('-').map(Number);
     return new Date(Date.UTC(p[0], p[1] - 1, p[2] + dias)).toISOString().slice(0, 10);
   }
-  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
   // ---------- login ----------
   var estado = { servicos: [], clientes: [], editando: null, logado: false };
@@ -216,7 +216,18 @@
     estado.editando = s || null;
     $('os-titulo').textContent = s ? 'Editar OS' : 'Nova OS';
     $('btn-excluir').hidden = !s;
+    $('os-info-excluir').hidden = true;
     if (s) {
+      db.from('despesas').select('valor,pago').eq('servico_id', s.id).then(function (r) {
+        var rec = s.recebimentos || [], recebido = r2(rec.filter(function (p) { return p.pago; }).reduce(function (t, p) { return t + Number(p.valor); }, 0));
+        var abertas = (r.data || []).filter(function (d) { return !d.pago; }), pagas = (r.data || []).length - abertas.length;
+        var partes = ['Excluir esta OS remove ' + rec.length + ' parcela(s) de recebimento' + (recebido ? ' (' + brl(recebido) + ' já marcado como recebido)' : '')];
+        if (abertas.length) partes.push(abertas.length + ' despesa(s) em aberto ligada(s) a ela');
+        if (pagas) partes.push('(' + pagas + ' despesa(s) já paga(s) ficam no histórico)');
+        if (s.com_nf) partes.push('e o Simples do mês seguinte é recalculado');
+        $('os-info-excluir').textContent = partes.join(', ').replace(', (', ' (').replace(', e o', ' e o') + '.';
+        $('os-info-excluir').hidden = false;
+      });
       var d = s.detalhes || {};
       setRadio('tipo', s.clientes ? s.clientes.tipo : 'PF');
       $('f-nome').value = s.clientes ? s.clientes.nome : '';
@@ -258,7 +269,7 @@
     ev.preventDefault();
     mostrarErro($('os-erro'), '');
     var comNF = radio('nf') === '1', bruto = num('f-bruto');
-    var nome = $('f-nome').value.trim();
+    var nome = $('f-nome').value.trim().replace(/\s+/g, ' ');
     var reg = {
       categoria: $('f-cat').value, data_servico: $('f-data').value,
       detalhes: { forma: $('f-forma').value },
@@ -267,6 +278,12 @@
       condicao_pagamento: $('f-prazos').value.trim() || null, observacoes: $('f-obs').value.trim() || null
     };
     var linhas = lerParcelas();
+    if (bruto > 0) {
+      if (!linhas.length) { mostrarErro($('os-erro'), 'Falta definir as parcelas de recebimento. Escolha o prazo e clique em "Gerar parcelas".'); return; }
+      var somaP = r2(linhas.reduce(function (t, p) { return t + p.valor; }, 0));
+      if (somaP !== r2(bruto)) { mostrarErro($('os-erro'), 'As parcelas somam ' + brl(somaP) + ', mas o preço cobrado é ' + brl(r2(bruto)) + '. Clique em "Gerar parcelas" ou ajuste os valores.'); return; }
+      if (linhas.some(function (p) { return !p.vencimento; })) { mostrarErro($('os-erro'), 'Toda parcela precisa de uma data de vencimento.'); return; }
+    }
     var btn = $('btn-salvar'); btn.disabled = true;
     var ed = estado.editando;
 
@@ -286,7 +303,7 @@
         }));
       }).then(function (i) { if (i && i.error) throw i.error; });
     }).then(function () {
-      dlg.close(); return carregar();
+      EF.invalidarSinc(); dlg.close(); return carregar();
     }).catch(function (e) {
       mostrarErro($('os-erro'), 'Erro ao salvar: ' + (e.message || e));
     }).then(function () { btn.disabled = false; });
@@ -294,11 +311,16 @@
 
   $('btn-excluir').addEventListener('click', function () {
     if (!estado.editando) return;
+    var id = estado.editando.id;
     EF.confirmar(this, 'Clique de novo para excluir', function () {
-      db.from('servicos').delete().eq('id', estado.editando.id).then(function (r) {
-        if (r.error) { mostrarErro($('os-erro'), 'Erro ao excluir: ' + r.error.message); return; }
-        dlg.close(); carregar();
-      });
+      // despesas em aberto ligadas a esta OS saem junto; as já pagas ficam (só perdem o vínculo)
+      db.from('despesas').delete().eq('servico_id', id).eq('pago', false).then(function (d) {
+        if (d.error) throw d.error;
+        return db.from('servicos').delete().eq('id', id);
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        EF.invalidarSinc(); dlg.close(); carregar();
+      }).catch(function (e) { mostrarErro($('os-erro'), 'Erro ao excluir: ' + (e.message || e)); });
     });
   });
 })();
