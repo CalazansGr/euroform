@@ -140,7 +140,7 @@
       st.recorrentes = r.data;
       $('lista-rec').innerHTML = r.data.length ? r.data.map(function (x) {
         return '<div class="rec-item' + (x.ativo ? '' : ' off') + '" data-id="' + x.id + '"><strong>' + esc(x.descricao) + '</strong><span>' + brl(Number(x.valor)) +
-          '</span><span>dia ' + x.dia_vencimento + '</span><button type="button" class="btn-sec rec-toggle">' + (x.ativo ? 'Pausar' : 'Ativar') +
+          '</span><span>dia ' + x.dia_vencimento + '</span><button type="button" class="btn-sec rec-edit">Editar</button><button type="button" class="btn-sec rec-toggle">' + (x.ativo ? 'Pausar' : 'Ativar') +
           '</button><button type="button" class="btn-perigo rec-del">Excluir</button></div>';
       }).join('') : '<p class="vazio">Nenhuma despesa fixa cadastrada.</p>';
     });
@@ -158,7 +158,28 @@
   $('lista-rec').addEventListener('click', function (ev) {
     var item = ev.target.closest('.rec-item'); if (!item) return;
     var x = st.recorrentes.find(function (r) { return r.id === item.dataset.id; });
-    if (ev.target.classList.contains('rec-toggle')) {
+    if (ev.target.classList.contains('rec-edit')) {
+      item.classList.add('edit');
+      item.innerHTML = '<input class="e-desc" value="' + esc(x.descricao).replace(/"/g, '&quot;') + '"><input class="e-valor" type="number" min="0" step="0.01" inputmode="decimal" value="' + x.valor +
+        '"><input class="e-dia" type="number" min="1" max="31" value="' + x.dia_vencimento + '"><button type="button" class="rec-salvar">Salvar</button><button type="button" class="btn-sec rec-cancelar">Cancelar</button>';
+    } else if (ev.target.classList.contains('rec-cancelar')) {
+      carregarRec();
+    } else if (ev.target.classList.contains('rec-salvar')) {
+      var novo = { descricao: item.querySelector('.e-desc').value.trim(), valor: r2(parseFloat(item.querySelector('.e-valor').value) || 0), dia_vencimento: parseInt(item.querySelector('.e-dia').value, 10) };
+      if (!novo.descricao || !novo.dia_vencimento) { E.mostrarErro($('rec-erro'), 'Preencha descrição e dia.'); return; }
+      var inicioMes = mesAtual() + '-01';
+      db.from('recorrentes').update(novo).eq('id', x.id).then(function (r) {
+        if (r.error) throw r.error;
+        // propaga para as linhas ainda não pagas, do mês atual em diante
+        return db.from('despesas').select('id,vencimento').eq('recorrente_id', x.id).eq('pago', false).gte('vencimento', inicioMes);
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        return Promise.all(r.data.map(function (d) {
+          return db.from('despesas').update({ descricao: novo.descricao, valor: novo.valor, vencimento: dataNoMes(d.vencimento.slice(0, 7), novo.dia_vencimento) }).eq('id', d.id);
+        }));
+      }).then(function () { E.mostrarErro($('rec-erro'), ''); carregarRec(); })
+        .catch(function (e) { E.mostrarErro($('rec-erro'), 'Erro ao salvar: ' + (e.message || e)); });
+    } else if (ev.target.classList.contains('rec-toggle')) {
       db.from('recorrentes').update({ ativo: !x.ativo }).eq('id', x.id).then(carregarRec);
     } else if (ev.target.classList.contains('rec-del')) {
       E.confirmar(ev.target, 'Confirmar?', function () {

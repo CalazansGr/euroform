@@ -81,3 +81,5 @@ label.inline{flex-direction:row;align-items:center;gap:8px}
 .alerta{border-radius:12px;padding:12px 14px;margin-bottom:14px;font-weight:600}.alerta.ruim{background:#fde7e9;color:#8f1424;border:1px solid #f3b3ba}.alerta.bom{background:#e3f6ea;color:#0a5c2a;border:1px solid #b6e3c6}
 .cal-mes{margin-bottom:16px}.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.cal .dow{font-size:11px;text-align:center;color:#777;font-weight:700}.cal .dia{background:#fff;border:1px solid var(--borda);border-radius:6px;min-height:58px;padding:3px 4px;font-size:11px;overflow:hidden}.cal .dia b{font-size:12px}.cal .dia.fora{visibility:hidden}.cal .dia.neg{background:#fde7e9;border-color:#f3b3ba}.cal .dia.hoje{outline:2px solid var(--acento)}.cal .in{color:#0a7a35;display:block}.cal .out{color:#b00020;display:block}
 .tabela tr.neg-linha td{background:#fff5f6}.tabela .virt{color:#888;font-style:italic}
+.rec-item{grid-template-columns:2fr 1fr 1fr auto auto auto}.rec-item.edit{grid-template-columns:2fr 1fr 1fr auto auto}.rec-item.edit input{width:100%;padding:6px 8px;font-size:14px}
+@media(max-width:520px){.rec-item,.rec-item.edit{grid-template-columns:1fr 1fr}}
