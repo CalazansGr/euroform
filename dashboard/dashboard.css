@@ -83,3 +83,136 @@ label.inline{flex-direction:row;align-items:center;gap:8px}
 .tabela tr.neg-linha td{background:#fff5f6}.tabela .virt{color:#888;font-style:italic}
 .rec-item{grid-template-columns:2fr 1fr 1fr auto auto auto}.rec-item.edit{grid-template-columns:2fr 1fr 1fr auto auto}.rec-item.edit input{width:100%;padding:6px 8px;font-size:14px}
 @media(max-width:520px){.rec-item,.rec-item.edit{grid-template-columns:1fr 1fr}}
+
+/* ===== Polimento de layout e espaçamento ===== */
+.conteudo{max-width:1100px;margin:0 auto;padding:28px 20px 56px}
+.pagina-topo{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.titulo{margin:0;font-family:Poppins,system-ui,sans-serif;font-size:26px}
+.pagina-topo .sub{margin-top:2px}
+.bloco{margin-top:32px}
+.cards{gap:14px;margin-bottom:0}
+.cards-4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.card{padding:18px 20px}
+.card strong{display:block;margin:4px 0 6px;font-size:26px}
+.card small{line-height:1.4}
+.card span{font-weight:600}
+h3{margin:0 0 12px;font-size:17px}
+h3 small{margin-left:6px}
+.duas-col{gap:24px}
+.pend{padding:12px 14px}
+.pend b{font-size:15px;white-space:nowrap}
+.vazio-bloco{margin:0;padding:18px;color:#777;background:#fff;border:1px dashed var(--borda);border-radius:10px;text-align:center;font-size:14px}
+.meses{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.mes-chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;background:#fff;border:1px solid var(--borda);font-weight:600}
+.mes-chip span{font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.04em}
+.mes-chip strong{font-size:16px}
+.mes-chip:hover{background:#fff8e6}
+.mes-chip.sel{background:var(--acento);border-color:var(--acento)}.mes-chip.sel span{color:#3a2a00}
+.mes-chip.vazio-chip strong{color:#aaa}.mes-chip.vazio-chip.sel strong{color:#3a2a00}
+.detalhes summary{cursor:pointer;font-weight:600;color:#555;padding:8px 0}
+.detalhes[open] summary{margin-bottom:12px}
+
+/* ===== Mobile ===== */
+.card{min-width:0;overflow:hidden}
+@media(max-width:640px){
+  .topo{padding:10px 16px;gap:8px 10px}
+  .topo strong{order:1;flex:1;font-size:18px}
+  .topo #btn-sair{order:2}
+  .topo #usuario{display:none}
+  .abas{order:3;width:100%;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+  .abas .aba{white-space:nowrap;padding:9px 14px;background:#f1f1f1}
+  .abas .aba.ativa{background:var(--acento)}
+  .conteudo{padding:20px 16px 48px}
+  .titulo{font-size:22px}
+  .cards{gap:10px}
+  .card{padding:14px}
+  .card strong{font-size:19px}
+  .bloco{margin-top:26px}
+  .meses{grid-template-columns:repeat(2,1fr)}
+  button,input,select{min-height:44px}
+}
+@media(max-width:640px){
+  .tabela thead{display:none}
+  .tabela,.tabela tbody{display:block}
+  .tabela tbody tr{display:block;padding:12px 14px;border-bottom:1px solid var(--borda)}
+  .tabela tbody tr:last-child{border-bottom:0}
+  .tabela td{display:flex;justify-content:space-between;gap:14px;border:0;padding:3px 0;white-space:normal;text-align:right}
+  .tabela td::before{content:attr(data-label);color:#777;font-size:12px;font-weight:600;text-align:left;flex-shrink:0}
+  .tabela td:empty{display:none}
+  .tabela .num{text-align:right}
+}
+@media(max-width:640px){
+  /* Serviços: cartão compacto */
+  .t-servicos tbody tr{display:grid;grid-template-columns:1fr auto;gap:3px 12px;align-items:center}
+  .t-servicos td::before,.t-despesas td::before{display:none}
+  .t-servicos td{display:block;padding:0}
+  .t-servicos td:nth-child(2){grid-column:1;grid-row:1;font-weight:700;font-size:15px;text-align:left}
+  .t-servicos td:nth-child(5){grid-column:2;grid-row:1;font-weight:700;font-size:15px}
+  .t-servicos td:nth-child(3){grid-column:1;grid-row:2;text-align:left;color:#555}
+  .t-servicos td:nth-child(1){grid-column:2;grid-row:2;color:#777;font-size:13px}
+  .t-servicos td:nth-child(4){grid-column:1;grid-row:3;text-align:left}
+  .t-servicos td:nth-child(7){grid-column:2;grid-row:3}
+  .t-servicos td:nth-child(7)::before{display:inline;content:"Lucro ";font-weight:400;color:#777}
+  .t-servicos td:nth-child(6){display:none}
+  .t-servicos td:nth-child(8){grid-column:1 / -1;grid-row:4;text-align:left;color:#777;font-size:13px}
+  /* Despesas: cartão compacto */
+  .t-despesas tbody tr{display:grid;grid-template-columns:1fr auto;gap:3px 12px;align-items:center}
+  .t-despesas td{display:block;padding:0}
+  .t-despesas td:nth-child(2){grid-column:1;grid-row:1;font-weight:700;text-align:left}
+  .t-despesas td:nth-child(5){grid-column:2;grid-row:1;font-weight:700}
+  .t-despesas td:nth-child(1){grid-column:1;grid-row:2;text-align:left;color:#666;font-size:13px}
+  .t-despesas td:nth-child(6){grid-column:2;grid-row:2}
+  .t-despesas td:nth-child(3),.t-despesas td:nth-child(4){display:none}
+}
+.resumo-lista{margin:0 0 10px;color:#555;font-size:14px}
+.barra input,.barra select,.barra button{height:42px;padding-top:0;padding-bottom:0}
+@media(max-width:640px){
+  .barra{gap:8px}
+  .barra input[type=search]{flex:1 1 100%}
+  .barra select,.barra input[type=month]{flex:1 1 calc(50% - 4px);min-width:0}
+  .barra button{flex:1 1 100%}
+}
+@media(max-width:640px){
+  .barra input[type=month]{flex:1 1 100%}
+  .resumo-desp{grid-template-columns:repeat(3,1fr);gap:8px}
+  .resumo-desp div{padding:10px 8px}
+  .resumo-desp strong{font-size:14px}
+}
+.resumo-desp{margin-bottom:18px}
+.controles{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.campo-saldo{font-weight:600;font-size:13px;color:#555}
+.campo-saldo input{display:block;margin-top:4px;width:180px;height:42px}
+.cards{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.detalhes summary small{font-weight:400;color:#888;margin-left:6px}
+@media(max-width:640px){
+  .controles{width:100%}.campo-saldo{flex:1 1 100%}.campo-saldo input{width:100%}
+  .controles select{flex:1 1 100%}
+  .t-fluxo tbody tr{display:grid;grid-template-columns:1fr auto;gap:3px 12px}
+  .t-fluxo td{display:block;padding:0}
+  .t-fluxo td::before{display:none}
+  .t-fluxo td:nth-child(1){grid-column:1;grid-row:1;font-weight:700;text-align:left}
+  .t-fluxo td:nth-child(5){grid-column:2;grid-row:1;font-weight:700}
+  .t-fluxo td:nth-child(5)::before{display:inline;content:"Saldo ";font-weight:400;color:#777}
+  .t-fluxo td:nth-child(2){grid-column:1 / -1;grid-row:2;text-align:left}
+  .t-fluxo td:nth-child(3){grid-column:1;grid-row:3;text-align:left}
+  .t-fluxo td:nth-child(4){grid-column:2;grid-row:3}
+  .t-fluxo td:nth-child(3):not(:empty)::before{display:inline;content:"Entra ";font-weight:400;color:#777}
+  .t-fluxo td:nth-child(4):not(:empty)::before{display:inline;content:"Sai ";font-weight:400;color:#777}
+}
+.tabela tr.neg-linha td{background:transparent}
+.tabela tr.neg-linha{background:#fff5f6}
+.tabela tbody tr{cursor:default}.tabela tbody tr:hover{background:transparent}
+.t-servicos tbody tr,.t-despesas tbody tr{cursor:pointer}
+.t-servicos tbody tr:hover,.t-despesas tbody tr:hover{background:#fff8e6}
+.os-form .acoes{position:sticky;bottom:0;background:#fff;margin:0 -20px -20px;padding:12px 20px;border-top:1px solid var(--borda);border-radius:0 0 14px 14px}
+dialog{max-height:92vh;overflow:auto}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid #1a1a1a;outline-offset:2px}
+input:focus,select:focus,textarea:focus{border-color:var(--acento)}
+.cards-3{grid-template-columns:repeat(3,1fr);margin:0 0 22px}
+.barra{margin-bottom:18px}
+@media(max-width:640px){
+  .cards-3{grid-template-columns:repeat(3,1fr);gap:8px}
+  .cards-3 .card{padding:10px 8px}.cards-3 .card strong{font-size:14px}.cards-3 .card span{font-size:11px}
+  .pagina-topo .controles{width:100%}.pagina-topo .controles button{flex:1}
+  .pagina-topo>button{width:100%}
+}

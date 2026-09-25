@@ -104,6 +104,7 @@
       $('x-venc').value = E.hoje();
     }
     dlg.showModal();
+    if (!d) $('x-desc').focus();
   }
   $('btn-nova-desp').addEventListener('click', function () { abrirDesp(null); });
   $('btn-cancelar-desp').addEventListener('click', function () { dlg.close(); });

@@ -95,6 +95,7 @@
     });
   }
 
+  if (window.innerWidth <= 640) $('fx-cal-det').open = false;
   var timer;
   $('fx-saldo').addEventListener('input', function () {
     clearTimeout(timer);

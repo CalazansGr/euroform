@@ -15,7 +15,7 @@
   // ---------- utilidades ----------
   function num(id) { var v = parseFloat($(id).value); return isNaN(v) ? 0 : v; }
   function r2(n) { return Math.round(n * 100) / 100; }
-  function brl(n) { return (n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function brl(n) { return (n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace('-', '−'); }
   function dataBR(iso) { var p = iso.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
   function hoje() { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
   function somaDias(iso, dias) {
@@ -63,6 +63,16 @@
     btn._t = setTimeout(function () { delete btn.dataset.armado; btn.textContent = btn.dataset.rotulo; }, 4000);
   };
 
+  // Rotula as células das tabelas (usado no layout de cartões do celular).
+  document.querySelectorAll('.tabela').forEach(function (t) {
+    var heads = Array.prototype.map.call(t.querySelectorAll('thead th'), function (th) { return th.textContent; });
+    new MutationObserver(function () {
+      t.querySelectorAll('tbody tr').forEach(function (tr) {
+        Array.prototype.forEach.call(tr.children, function (td, i) { if (!td.dataset.label) td.dataset.label = heads[i] || ''; });
+      });
+    }).observe(t.querySelector('tbody'), { childList: true });
+  });
+
   // Clicar fora da caixa (no fundo escuro) fecha o pop-up; Esc também fecha (nativo).
   document.querySelectorAll('dialog').forEach(function (dlg) {
     var iniciouFora = false;
@@ -84,6 +94,8 @@
     });
   }
 
+  function prazoTxt(forma, prazo) { return (forma + ' ' + (prazo === '0' ? 'à vista' : (prazo || ''))).trim(); }
+  EF.prazoTxt = prazoTxt;
   function lucroDe(s) { return r2(Number(s.valor_bruto) - Number(s.custo_total) - Number(s.imposto)); }
 
   function listar() {
@@ -91,6 +103,7 @@
     var cat = $('filtro-cat').value, nf = $('filtro-nf').value;
     var itens = estado.servicos.filter(function (s) {
       if (cat && s.categoria !== cat) return false;
+      if ($('filtro-mes').value && s.data_servico.slice(0, 7) !== $('filtro-mes').value) return false;
       if (nf !== '' && String(s.com_nf ? 1 : 0) !== nf) return false;
       if (q) {
         var txt = ((s.clientes ? s.clientes.nome : '') + ' ' + (s.observacoes || '')).toLowerCase();
@@ -99,6 +112,9 @@
       return true;
     });
     $('vazio').hidden = itens.length > 0;
+    var tb = 0, tl = 0;
+    itens.forEach(function (s) { tb += Number(s.valor_bruto); tl += lucroDe(s); });
+    $('resumo-os').innerHTML = itens.length ? '<strong>' + itens.length + '</strong> OS · faturado <strong>' + brl(r2(tb)) + '</strong> · lucro estimado <strong class="' + (tl >= 0 ? 'pos' : 'neg') + '">' + brl(r2(tl)) + '</strong>' : '';
     $('lista').innerHTML = itens.map(function (s) {
       var l = lucroDe(s);
       var forma = (s.detalhes && FORMAS[s.detalhes.forma]) || '';
@@ -109,10 +125,10 @@
         '<td class="num">' + brl(Number(s.valor_bruto)) + '</td>' +
         '<td class="num">' + brl(Number(s.custo_total)) + '</td>' +
         '<td class="num ' + (l >= 0 ? 'pos' : 'neg') + '">' + brl(l) + '</td>' +
-        '<td>' + esc((forma + ' ' + (s.condicao_pagamento || '')).trim()) + '</td></tr>';
+        '<td>' + esc(prazoTxt(forma, s.condicao_pagamento)) + '</td></tr>';
     }).join('');
   }
-  ['busca', 'filtro-cat', 'filtro-nf'].forEach(function (id) { $(id).addEventListener('input', listar); });
+  ['busca', 'filtro-mes', 'filtro-cat', 'filtro-nf'].forEach(function (id) { $(id).addEventListener('input', listar); });
   $('lista').addEventListener('click', function (ev) {
     var tr = ev.target.closest('tr'); if (!tr) return;
     abrirForm(estado.servicos.find(function (s) { return s.id === tr.dataset.id; }));
@@ -220,6 +236,7 @@
     }
     atualizarTipo(); recalcular();
     dlg.showModal();
+    if (!s) $('f-nome').focus();
   }
   $('btn-nova').addEventListener('click', function () { abrirForm(null); });
   $('btn-cancelar').addEventListener('click', function () { dlg.close(); });

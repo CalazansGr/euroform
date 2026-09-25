@@ -33,51 +33,83 @@
   </header>
 
   <main class="conteudo" id="aba-painel">
-    <div class="barra"><input type="month" id="p-mes"></div>
-    <div class="cards" id="p-cards"></div>
-    <h3>Quanto vou receber neste mês</h3>
-    <div class="cards" id="p-rec-cards"></div>
-    <div class="tabela-wrap" style="margin-bottom:16px">
-      <table class="tabela">
-        <thead><tr><th>Vencimento</th><th>Cliente</th><th>Forma / prazo</th><th class="num">Valor</th><th>Situação</th></tr></thead>
-        <tbody id="p-rec-lista"></tbody>
-      </table>
-      <p class="vazio" id="p-rec-vazio" hidden>Nenhum recebimento previsto neste mês.</p>
+    <div class="pagina-topo">
+      <div><h2 class="titulo">Painel</h2><p class="sub" id="p-subtitulo">Resumo do mês</p></div>
+      <input type="month" id="p-mes" aria-label="Mês">
     </div>
-    <h3>Previsão de recebimentos por mês</h3>
-    <div class="cards" id="p-rec-meses"></div>
-    <div class="duas-col">
-      <section><h3>A receber <small>(atrasadas e próximos 7 dias)</small></h3><div id="p-receber" class="lista-pend"></div></section>
-      <section><h3>A pagar <small>(atrasadas e próximos 7 dias)</small></h3><div id="p-pagar" class="lista-pend"></div></section>
+
+    <div class="cards cards-4" id="p-cards"></div>
+
+    <div class="duas-col bloco">
+      <section>
+        <h3>Receber <small>atrasado e próximos 7 dias</small></h3>
+        <div id="p-receber" class="lista-pend"></div>
+      </section>
+      <section>
+        <h3>Pagar <small>atrasado e próximos 7 dias</small></h3>
+        <div id="p-pagar" class="lista-pend"></div>
+      </section>
     </div>
+
+    <section class="bloco">
+      <h3>Recebimentos por mês <small>toque num mês para ver as parcelas</small></h3>
+      <div class="meses" id="p-rec-meses"></div>
+      <div class="tabela-wrap">
+        <table class="tabela">
+          <thead><tr><th>Vencimento</th><th>Cliente</th><th>Forma / prazo</th><th class="num">Valor</th><th>Situação</th></tr></thead>
+          <tbody id="p-rec-lista"></tbody>
+        </table>
+        <p class="vazio" id="p-rec-vazio" hidden>Nenhum recebimento previsto neste mês.</p>
+      </div>
+    </section>
+
+    <details class="bloco detalhes">
+      <summary>Ver como o lucro foi calculado</summary>
+      <div class="cards" id="p-detalhes"></div>
+    </details>
   </main>
 
   <main class="conteudo" id="aba-fluxo" hidden>
-    <div class="barra">
-      <label class="inline">Saldo em caixa hoje (R$) <input type="number" id="fx-saldo" step="0.01" inputmode="decimal" placeholder="0,00"></label>
-      <select id="fx-horizonte">
-        <option value="30">Próximos 30 dias</option>
-        <option value="60" selected>Próximos 60 dias</option>
-        <option value="90">Próximos 90 dias</option>
-      </select>
+    <div class="pagina-topo">
+      <div><h2 class="titulo">Fluxo de caixa</h2><p class="sub">O que entra e o que sai, dia a dia</p></div>
+      <div class="controles">
+        <label class="campo-saldo"><span>Saldo em caixa hoje (R$)</span><input type="number" id="fx-saldo" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+        <select id="fx-horizonte" aria-label="Período">
+          <option value="30">Próximos 30 dias</option>
+          <option value="60" selected>Próximos 60 dias</option>
+          <option value="90">Próximos 90 dias</option>
+        </select>
+      </div>
     </div>
     <p class="aviso" id="fx-msg" hidden></p>
     <div id="fx-alerta" hidden></div>
-    <div class="cards" id="fx-cards"></div>
-    <div id="fx-calendarios"></div>
-    <h3>Dia a dia</h3>
-    <div class="tabela-wrap">
-      <table class="tabela">
-        <thead><tr><th>Dia</th><th>Movimento</th><th class="num">Entra</th><th class="num">Sai</th><th class="num">Saldo</th></tr></thead>
-        <tbody id="fx-lista"></tbody>
-      </table>
-      <p class="vazio" id="fx-vazio" hidden>Nada a receber ou pagar nesse período.</p>
-    </div>
+    <div class="cards cards-4" id="fx-cards"></div>
+
+    <section class="bloco">
+      <h3>Dia a dia</h3>
+      <div class="tabela-wrap">
+        <table class="tabela t-fluxo">
+          <thead><tr><th>Dia</th><th>Movimento</th><th class="num">Entra</th><th class="num">Sai</th><th class="num">Saldo</th></tr></thead>
+          <tbody id="fx-lista"></tbody>
+        </table>
+        <p class="vazio" id="fx-vazio" hidden>Nada a receber ou pagar nesse período.</p>
+      </div>
+    </section>
+
+    <details class="bloco detalhes" id="fx-cal-det" open>
+      <summary>Calendário <small>vermelho = saldo negativo</small></summary>
+      <div id="fx-calendarios"></div>
+    </details>
   </main>
 
   <main class="conteudo" id="aba-servicos" hidden>
+    <div class="pagina-topo">
+      <div><h2 class="titulo">Serviços (OS)</h2><p class="sub">Todas as ordens de serviço · toque numa linha para editar</p></div>
+      <button type="button" id="btn-nova">+ Nova OS</button>
+    </div>
     <div class="barra">
       <input type="search" id="busca" placeholder="Buscar cliente ou observação...">
+      <input type="month" id="filtro-mes" title="Filtrar por mês" aria-label="Mês">
       <select id="filtro-cat">
         <option value="">Todas as categorias</option>
         <option value="higienizacao">Higienização</option>
@@ -90,10 +122,10 @@
         <option value="1">Só com NF</option>
         <option value="0">Só sem NF</option>
       </select>
-      <button type="button" id="btn-nova">+ Nova OS</button>
     </div>
+    <p class="resumo-lista" id="resumo-os"></p>
     <div class="tabela-wrap">
-      <table class="tabela">
+      <table class="tabela t-servicos">
         <thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>NF</th><th class="num">Bruto</th><th class="num">Custo</th><th class="num">Lucro est.</th><th>Pagamento</th></tr></thead>
         <tbody id="lista"></tbody>
       </table>
@@ -102,6 +134,10 @@
   </main>
 
   <main class="conteudo" id="aba-despesas" hidden>
+    <div class="pagina-topo">
+      <div><h2 class="titulo">Despesas</h2><p class="sub">Contas a pagar do mês · toque numa linha para editar</p></div>
+      <div class="controles"><button type="button" class="btn-sec" id="btn-recorrentes">Despesas fixas</button><button type="button" id="btn-nova-desp">+ Nova despesa</button></div>
+    </div>
     <div class="barra">
       <input type="month" id="d-mes">
       <select id="d-filtro-tipo">
@@ -115,16 +151,14 @@
         <option value="0">Só pendentes</option>
         <option value="1">Só pagas</option>
       </select>
-      <button type="button" class="btn-sec" id="btn-recorrentes">Despesas fixas</button>
-      <button type="button" id="btn-nova-desp">+ Nova despesa</button>
     </div>
-    <div class="resumo resumo-desp">
-      <div><span>Total do mês</span><strong id="dt-total">R$ 0,00</strong></div>
-      <div><span>Já pago</span><strong id="dt-pago">R$ 0,00</strong></div>
-      <div class="lucro"><span>A pagar</span><strong id="dt-pendente">R$ 0,00</strong></div>
+    <div class="cards cards-3">
+      <div class="card"><span>Total do mês</span><strong id="dt-total">R$ 0,00</strong></div>
+      <div class="card"><span>Já pago</span><strong id="dt-pago" class="pos">R$ 0,00</strong></div>
+      <div class="card dest"><span>Falta pagar</span><strong id="dt-pendente">R$ 0,00</strong></div>
     </div>
     <div class="tabela-wrap">
-      <table class="tabela">
+      <table class="tabela t-despesas">
         <thead><tr><th>Vencimento</th><th>Descrição</th><th>Fornecedor</th><th>Tipo</th><th class="num">Valor</th><th>Situação</th></tr></thead>
         <tbody id="lista-desp"></tbody>
       </table>
