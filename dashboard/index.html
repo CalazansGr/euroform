@@ -75,7 +75,7 @@
     <div class="pagina-topo">
       <div><h2 class="titulo">Fluxo de caixa</h2><p class="sub">O que entra e o que sai, dia a dia</p></div>
       <div class="controles">
-        <label class="campo-saldo"><span>Saldo em caixa hoje (R$)</span><input type="number" id="fx-saldo" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+        <label class="campo-saldo"><span>Saldo em caixa hoje (opcional)</span><input type="number" id="fx-saldo" step="0.01" inputmode="decimal" placeholder="não informado"></label>
         <select id="fx-horizonte" aria-label="Período">
           <option value="30">Próximos 30 dias</option>
           <option value="60" selected>Próximos 60 dias</option>
@@ -91,7 +91,7 @@
       <h3>Dia a dia</h3>
       <div class="tabela-wrap">
         <table class="tabela t-fluxo">
-          <thead><tr><th>Dia</th><th>Movimento</th><th class="num">Entra</th><th class="num">Sai</th><th class="num">Saldo</th></tr></thead>
+          <thead><tr><th>Dia</th><th>Movimento</th><th class="num">Entra</th><th class="num">Sai</th><th class="num" id="fx-th-saldo">Acumulado</th></tr></thead>
           <tbody id="fx-lista"></tbody>
         </table>
         <p class="vazio" id="fx-vazio" hidden>Nada a receber ou pagar nesse período.</p>

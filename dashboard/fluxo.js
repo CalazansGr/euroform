@@ -21,7 +21,7 @@
     }).then(function (r) {
       for (var i = 0; i < 3; i++) if (r[i].error) { alert('Erro ao carregar fluxo: ' + r[i].error.message); return; }
       if (r[3].error) { $('fx-msg').textContent = 'Para guardar o saldo em caixa, falta criar a tabela "configuracoes" no Supabase (peça o SQL ao Claude). Por enquanto o saldo vale só nesta tela.'; $('fx-msg').hidden = false; }
-      else if (r[3].data && document.activeElement !== $('fx-saldo')) { $('fx-saldo').value = r[3].data.valor; }
+      else if (document.activeElement !== $('fx-saldo')) { $('fx-saldo').value = r[3].data && r[3].data.valor != null ? r[3].data.valor : ''; }
 
       var ev = [];
       r[0].data.forEach(function (x) {
@@ -57,16 +57,24 @@
       }
 
       var totEnt = soma(ev, function (e) { return e.in; }), totSai = soma(ev, function (e) { return e.out; });
+      var informado = $('fx-saldo').value.trim() !== '';
       $('fx-alerta').hidden = false;
       $('fx-alerta').className = 'alerta ' + (primeiroNeg ? 'ruim' : 'bom');
-      $('fx-alerta').textContent = primeiroNeg
-        ? '⚠ Atenção: o caixa fica negativo a partir de ' + E.dataBR(primeiroNeg) + '. Menor saldo previsto: ' + brl(minimo.v) + ' em ' + E.dataBR(minimo.dia) + '.'
-        : '✔ O caixa não fica negativo nos próximos ' + dias + ' dias. Menor saldo previsto: ' + brl(minimo.v) + '.';
+      if (informado) {
+        $('fx-alerta').textContent = primeiroNeg
+          ? '⚠ Atenção: o caixa fica negativo a partir de ' + E.dataBR(primeiroNeg) + '. Menor saldo previsto: ' + brl(minimo.v) + ' em ' + E.dataBR(minimo.dia) + '.'
+          : '✔ O caixa não fica negativo nos próximos ' + dias + ' dias. Menor saldo previsto: ' + brl(minimo.v) + '.';
+      } else {
+        $('fx-alerta').textContent = primeiroNeg
+          ? '⚠ A partir de ' + E.dataBR(primeiroNeg) + ' vai sair mais dinheiro do que entra. Até o ponto mais apertado (' + E.dataBR(minimo.dia) + ') você precisaria ter pelo menos ' + brl(-minimo.v) + ' em caixa pra cobrir as contas.'
+          : '✔ Nos próximos ' + dias + ' dias as entradas cobrem as saídas, mesmo sem contar o dinheiro que já está em caixa.';
+      }
       $('fx-cards').innerHTML =
-        '<div class="card"><span>Saldo em caixa hoje</span><strong>' + brl(saldo0) + '</strong></div>' +
+        (informado ? '<div class="card"><span>Saldo em caixa hoje</span><strong>' + brl(saldo0) + '</strong></div>' : '') +
         '<div class="card"><span>A receber no período</span><strong class="pos">' + brl(totEnt) + '</strong></div>' +
         '<div class="card"><span>A pagar no período</span><strong class="neg">' + brl(totSai) + '</strong></div>' +
-        '<div class="card dest"><span>Saldo previsto no fim</span><strong class="' + (saldo >= 0 ? 'pos' : 'neg') + '">' + brl(saldo) + '</strong></div>';
+        '<div class="card dest"><span>' + (informado ? 'Saldo previsto no fim' : 'Entra − sai no período') + '</span><strong class="' + (saldo >= 0 ? 'pos' : 'neg') + '">' + brl(saldo) + '</strong></div>';
+      $('fx-th-saldo').textContent = informado ? 'Saldo' : 'Acumulado';
 
       // calendários
       $('fx-calendarios').innerHTML = ms.map(function (m) {
@@ -100,7 +108,7 @@
   $('fx-saldo').addEventListener('input', function () {
     clearTimeout(timer);
     timer = setTimeout(function () {
-      db.from('configuracoes').upsert({ chave: CHAVE, valor: parseFloat($('fx-saldo').value) || 0 }).then(function () { carregarFluxo(); });
+      db.from('configuracoes').upsert({ chave: CHAVE, valor: $('fx-saldo').value.trim() === '' ? null : (parseFloat($('fx-saldo').value) || 0) }).then(function () { carregarFluxo(); });
     }, 700);
   });
   $('fx-horizonte').addEventListener('change', carregarFluxo);
