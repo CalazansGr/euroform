@@ -174,9 +174,34 @@
     } else {
       $('x-venc').value = E.hoje();
     }
+    $('x-parc-campo').hidden = !!d;   // parcelar só ao lançar; depois cada parcela é editada separadamente
+    previaParcelas();
     dlg.showModal();
     if (!d) $('x-desc').focus();
   }
+
+  // ---- parcelamento: divide o valor total em N despesas, uma por mês a partir do 1º vencimento ----
+  function nParcelas() { return st.editando ? 1 : Math.max(1, Math.min(36, parseInt($('x-parc').value, 10) || 1)); }
+  function montarParcelas(total, venc, n) {
+    var p = venc.split('-').map(Number), dia = p[2], mes0 = venc.slice(0, 7);
+    var base = r2(Math.floor(total / n * 100) / 100), soma = 0, lista = [];
+    for (var i = 0; i < n; i++) {
+      var v = i === n - 1 ? r2(total - soma) : base; soma = r2(soma + v);   // centavos que sobram vão na última
+      lista.push({ valor: v, vencimento: dataNoMes(mesMais(mes0, i), dia) });
+    }
+    return lista;
+  }
+  function previaParcelas() {
+    var n = nParcelas(), venc = $('x-venc').value;
+    $('x-pago-txt').textContent = n > 1 ? '1ª parcela já foi paga' : 'Já foi paga';
+    $('x-valor').previousElementSibling.textContent = n > 1 ? 'Valor total (R$)' : 'Valor (R$)';
+    if (n < 2 || !venc) { $('x-parc-previa').hidden = true; return; }
+    var ps = montarParcelas(r2(E.num('x-valor')), venc, n);
+    $('x-parc-previa').textContent = n + 'x: ' + ps.map(function (x) { return E.dataBR(x.vencimento) + ' ' + brl(x.valor); }).join(' · ') +
+      '. Cada parcela vira uma conta a pagar separada (dá pra ajustar data e valor de cada uma depois).';
+    $('x-parc-previa').hidden = false;
+  }
+  ['x-parc', 'x-valor', 'x-venc'].forEach(function (id) { $(id).addEventListener('input', previaParcelas); });
   $('btn-nova-desp').addEventListener('click', function () { abrirDesp(null); });
   $('btn-cancelar-desp').addEventListener('click', function () { dlg.close(); });
 
@@ -186,7 +211,13 @@
       descricao: $('x-desc').value.trim(), fornecedor: $('x-forn').value.trim() || null, valor: r2(E.num('x-valor')),
       vencimento: $('x-venc').value, tipo: $('x-tipo').value, servico_id: $('x-os').value || null, pago: $('x-pago').checked
     };
-    var q = st.editando ? db.from('despesas').update(reg).eq('id', st.editando.id) : db.from('despesas').insert(reg);
+    var n = nParcelas(), q;
+    if (st.editando) q = db.from('despesas').update(reg).eq('id', st.editando.id);
+    else if (n > 1) {
+      q = db.from('despesas').insert(montarParcelas(reg.valor, reg.vencimento, n).map(function (x, i) {
+        return Object.assign({}, reg, { descricao: reg.descricao + ' (' + (i + 1) + '/' + n + ')', valor: x.valor, vencimento: x.vencimento, pago: i === 0 && reg.pago });
+      }));
+    } else q = db.from('despesas').insert(reg);
     q.then(function (r) {
       if (r.error) { E.mostrarErro($('desp-erro'), 'Erro ao salvar: ' + r.error.message); return; }
       dlg.close();

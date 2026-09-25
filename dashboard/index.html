@@ -186,8 +186,10 @@
           <option value="imposto">Imposto</option>
         </select></label>
       <label class="grande"><span>Vincular a uma OS (opcional)</span><select id="x-os"><option value="">— nenhuma —</option></select></label>
+      <label id="x-parc-campo"><span>Parcelas (mensais)</span><input type="number" id="x-parc" min="1" max="36" step="1" value="1" inputmode="numeric"></label>
     </div>
-    <label class="check"><input type="checkbox" id="x-pago"> Já foi paga</label>
+    <p class="aviso" id="x-parc-previa" hidden></p>
+    <label class="check"><input type="checkbox" id="x-pago"> <span id="x-pago-txt">Já foi paga</span></label>
     <p class="erro" id="desp-erro" role="alert" hidden></p>
     <div class="acoes">
       <button type="button" class="btn-perigo" id="btn-excluir-desp" hidden>Excluir</button>
