@@ -8,10 +8,10 @@
   $('d-categoria').innerHTML += Object.keys(CATS).map((k) => `<option value="${k}">${CATS[k]}</option>`).join('');
   $('d-cat').innerHTML = Object.keys(CATS).filter((k) => k !== 'fixa').map((k) => `<option value="${k}">${CATS[k]}</option>`).join('');
 
-  // Garante as despesas fixas do mês atual e do próximo (a função do banco não duplica).
+  // Garante as despesas fixas do mês olhado (qualquer mês, sem limite), do atual e do próximo. A função do banco não duplica.
   function gerarFixos(mes) {
     const meses = [mesAtual(), mesMais(mesAtual(), 1)];
-    if (mes && mes < meses[0]) meses.push(mes);
+    if (mes && !meses.includes(mes)) meses.push(mes);
     return Promise.all(meses.map((m) => db.rpc('gerar_fixos', { mes: m + '-01' }))).then((rs) => {
       const e = rs.find((r) => r.error); if (e) throw e.error;
     });

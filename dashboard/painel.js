@@ -18,7 +18,7 @@
     const ini = mes + '-01', fim = fimDoMes(mes);
     $('p-sub').textContent = 'Resumo de ' + MESES[parseInt(mes.slice(5), 10) - 1] + ' de ' + mes.slice(0, 4);
     // despesas fixas do mês precisam existir para entrar no "falta pagar"
-    const fixos = mes <= mesMais(mesAtual(), 1) && App.gerarFixos ? App.gerarFixos(mes).catch(() => {}) : Promise.resolve();
+    const fixos = App.gerarFixos ? App.gerarFixos(mes).catch(() => {}) : Promise.resolve();
     return fixos.then(() => Promise.all([
       db.from('ordens').select('id, categoria, valor, nf_emitida, gastos(parcelas(valor))').gte('data', ini).lte('data', fim),
       db.from('parcelas').select('valor, ordem_id, gasto_id').eq('pago', true).gte('pago_em', ini).lte('pago_em', fim),
