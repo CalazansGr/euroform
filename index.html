@@ -191,13 +191,20 @@ function euroformHandleSubmit(evt) {
   var label = btn ? (btn.querySelector('span') || btn) : null;
   var original = label ? label.textContent : null;
   if (label) label.textContent = 'Enviando...';
+  var dadosForm = new FormData(form);
+  var emailLead = (dadosForm.get('Email') || '').trim().toLowerCase();
+  var telefoneLead = (dadosForm.get('Telefone') || '').replace(/\D/g, '');
+  var nomeLead = (dadosForm.get('Nome') || '').trim();
   var ajaxUrl = form.action.replace('https://formsubmit.co/', 'https://formsubmit.co/ajax/');
-  fetch(ajaxUrl, { method: 'POST', body: new FormData(form), headers: { 'Accept': 'application/json' } })
+  fetch(ajaxUrl, { method: 'POST', body: dadosForm, headers: { 'Accept': 'application/json' } })
     .then(function (res) { if (!res.ok) throw new Error('erro'); return res.json(); })
     .then(function (data) {
       if (data && data.success === 'false') { console.warn('FormSubmit pendente de ativacao:', data.message); }
       form.reset();
-      if (typeof fbq === 'function') { fbq('track', 'Lead'); }
+      if (typeof fbq === 'function') {
+        if (emailLead || telefoneLead || nomeLead) { fbq('init', '1752490886001036', { em: emailLead, ph: telefoneLead, fn: nomeLead }); }
+        fbq('track', 'Lead');
+      }
       if (label) label.textContent = 'Enviado com sucesso!';
     })
     .catch(function () { if (label) label.textContent = 'Erro ao enviar. Chame no WhatsApp.'; })
