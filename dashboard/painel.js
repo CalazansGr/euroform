@@ -20,7 +20,7 @@
     // despesas fixas do mês precisam existir para entrar no "falta pagar"
     const fixos = App.gerarFixos ? App.gerarFixos(mes).catch(() => {}) : Promise.resolve();
     return fixos.then(() => Promise.all([
-      db.from('ordens').select('id, categoria, valor, nf_emitida, gastos(parcelas(valor))').gte('data', ini).lte('data', fim),
+      db.from('ordens').select('id, categoria, valor, nf_emitida, gastos(parcelas(valor))').eq('aprovado', true).gte('data', ini).lte('data', fim),
       db.from('parcelas').select('valor, ordem_id, gasto_id').eq('pago', true).gte('pago_em', ini).lte('pago_em', fim),
       db.from('parcelas').select('valor, ordem_id, gasto_id').eq('pago', false).gte('vencimento', ini).lte('vencimento', fim),
       db.from('parcelas').select('valor').not('ordem_id', 'is', null).eq('pago', false).is('vencimento', null)

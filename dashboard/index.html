@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Euroform · Painel interno</title>
-<link rel="stylesheet" href="estilo.css?v=6">
+<link rel="stylesheet" href="estilo.css?v=8">
 </head>
 <body>
 
@@ -25,6 +25,7 @@
     <strong class="marca">Euroform</strong>
     <nav class="abas">
       <button type="button" class="aba ativa" data-aba="painel">Painel</button>
+      <button type="button" class="aba" data-aba="aprovacao">Aguardando aprovação</button>
       <button type="button" class="aba" data-aba="servicos">Serviços</button>
       <button type="button" class="aba" data-aba="despesas">Despesas</button>
     </nav>
@@ -50,6 +51,21 @@
       <h4>Simples estimado <span>só uma estimativa: não entra em nenhuma conta do sistema</span></h4>
       <div class="simples" id="p-simples"></div>
     </section>
+  </main>
+
+  <!-- ================= AGUARDANDO APROVAÇÃO ================= -->
+  <main class="pagina" id="aba-aprovacao" hidden>
+    <div class="pagina-topo">
+      <div><h2>Aguardando aprovação</h2><p class="sub">Contatos que ainda não foram confirmados pelo cliente — não contam no faturamento</p></div>
+      <button type="button" id="btn-novo-contato">+ Novo contato</button>
+    </div>
+    <div class="filtros">
+      <input type="search" id="ap-busca" autocomplete="off" placeholder="Buscar cliente ou descrição...">
+      <input type="month" id="ap-mes" autocomplete="off" aria-label="Mês">
+    </div>
+    <p class="resumo" id="ap-resumo"></p>
+    <div class="lista" id="ap-lista"></div>
+    <p class="vazio" id="ap-vazio" hidden>Nenhum contato aguardando aprovação.</p>
   </main>
 
   <!-- ================= SERVIÇOS ================= -->
@@ -125,6 +141,9 @@
           <option value="higienizacao">Higienização</option>
         </select></label>
       <label><span>Data</span><input type="date" id="s-data" required></label>
+      <div class="campo"><span>Aprovado pelo cliente?</span>
+        <div class="seg"><label><input type="radio" name="s-aprovado" value="1" checked><span>Sim</span></label><label><input type="radio" name="s-aprovado" value="0"><span>Não</span></label></div>
+      </div>
       <div class="campo"><span>Em andamento?</span>
         <div class="seg"><label><input type="radio" name="s-andamento" value="0" checked><span>Não</span></label><label><input type="radio" name="s-andamento" value="1"><span>Sim</span></label></div>
       </div>
@@ -198,10 +217,11 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=6"></script>
-<script src="comum.js?v=6"></script>
-<script src="servicos.js?v=6"></script>
-<script src="despesas.js?v=6"></script>
-<script src="painel.js?v=6"></script>
+<script src="config.js?v=8"></script>
+<script src="comum.js?v=8"></script>
+<script src="servicos.js?v=8"></script>
+<script src="aprovacao.js?v=8"></script>
+<script src="despesas.js?v=8"></script>
+<script src="painel.js?v=8"></script>
 </body>
 </html>

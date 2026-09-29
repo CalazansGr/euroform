@@ -14,6 +14,7 @@
       App.ordens = ordens;
       $('lista-clientes').innerHTML = [...new Set(ordens.map((o) => o.cliente))].sort().map((c) => `<option value="${esc(c)}">`).join('');
       listar();
+      if (App.renderAprovacao) App.renderAprovacao();
     });
   }
 
@@ -25,6 +26,7 @@
   function listar() {
     const q = $('s-busca').value.trim().toLowerCase(), mes = $('s-mes').value, sit = $('s-situacao').value;
     const itens = ordens.filter((o) => {
+      if (!o.aprovado) return false;
       if (mes && o.data.slice(0, 7) !== mes) return false;
       if (sit === 'andamento' && !o.em_andamento) return false;
       if (q && [o.cliente, o.descricao, o.andamento_obs].join(' ').toLowerCase().indexOf(q) < 0) return false;
@@ -86,7 +88,7 @@
   document.querySelectorAll('input[name=s-andamento]').forEach((r) => r.addEventListener('change', () => { mostrarAndamento(); if (emAndamento()) $('s-andamento-obs').focus(); }));
   document.querySelectorAll('input[name=s-nf]').forEach((r) => r.addEventListener('change', () => { mostrarNF(); if (nfEmitida()) $('s-nf-numero').focus(); }));
 
-  function abrir(o) {
+  function abrir(o, aprovadoPadrao) {
     editando = o || null;
     $('form-servico').reset(); erro($('s-erro'));
     $('s-titulo').textContent = o ? 'Editar serviço' : 'Novo serviço';
@@ -96,16 +98,19 @@
       $('s-data').value = o.data; $('s-descricao').value = o.descricao || ''; $('s-valor').value = o.valor; $('s-obs').value = o.obs || '';
       radio(o.nf_emitida ? '1' : '0', 's-nf'); $('s-nf-numero').value = o.nf_numero || '';
       radio(o.em_andamento ? '1' : '0', 's-andamento'); $('s-andamento-obs').value = o.andamento_obs || '';
+      radio(o.aprovado ? '1' : '0', 's-aprovado');
       editor.carregar(o.parcelas);
     } else {
       $('s-data').value = hoje(); radio('PF');
+      radio(aprovadoPadrao === false ? '0' : '1', 's-aprovado');
       editor.novo('0');
     }
     mostrarNF(); mostrarAndamento();
     dlg.showModal();
     if (!o) $('s-cliente').focus();
   }
-  $('btn-novo-servico').addEventListener('click', () => abrir(null));
+  $('btn-novo-servico').addEventListener('click', () => abrir(null, true));
+  App.abrirServico = abrir;
 
   // cliente já conhecido: preenche PF/empresa como da última vez
   $('s-cliente').addEventListener('change', () => {
@@ -121,7 +126,8 @@
       categoria: $('s-categoria').value, data: $('s-data').value, descricao: $('s-descricao').value.trim() || null,
       valor: r2(num('s-valor')), obs: $('s-obs').value.trim() || null,
       em_andamento: emAndamento(), andamento_obs: emAndamento() ? ($('s-andamento-obs').value.trim() || null) : null,
-      nf_emitida: nfEmitida(), nf_numero: nfEmitida() ? ($('s-nf-numero').value.trim() || null) : null
+      nf_emitida: nfEmitida(), nf_numero: nfEmitida() ? ($('s-nf-numero').value.trim() || null) : null,
+      aprovado: document.querySelector('input[name=s-aprovado]:checked').value === '1'
     };
     const ps = editor.ler(), btn = $('s-salvar'); btn.disabled = true;
     (editando ? db.from('ordens').update(reg).eq('id', editando.id).select('id').single() : db.from('ordens').insert(reg).select('id').single())

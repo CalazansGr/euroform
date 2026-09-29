@@ -37,10 +37,16 @@
   window.App = App;
 
   // ---------- abas ----------
+  // lembra a última aba aberta, para o refresh voltar pra ela em vez de sempre ir pro Painel
+  function abaLembrada() {
+    let v; try { v = localStorage.getItem('euroform-aba'); } catch (e) {}
+    return v && document.querySelector(`.aba[data-aba="${v}"]`) ? v : 'painel';
+  }
   document.querySelectorAll('.aba').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.aba)));
   function abrirAba(nome) {
     document.querySelectorAll('.aba').forEach((x) => x.classList.toggle('ativa', x.dataset.aba === nome));
     document.querySelectorAll('main.pagina').forEach((m) => { m.hidden = m.id !== 'aba-' + nome; });
+    try { localStorage.setItem('euroform-aba', nome); } catch (e) {}
     if (App.abas[nome]) App.abas[nome]();
   }
   App.abaAtual = () => document.querySelector('.aba.ativa').dataset.aba;
@@ -58,7 +64,7 @@
   function mostrar(sessao) {
     $('tela-login').hidden = !!sessao;
     $('app').hidden = !sessao;
-    if (sessao && !logado) { logado = true; $('usuario').textContent = sessao.user.email; abrirAba('painel'); }
+    if (sessao && !logado) { logado = true; $('usuario').textContent = sessao.user.email; abrirAba(abaLembrada()); }
     if (!sessao) logado = false;
   }
   // espera servicos.js e despesas.js carregarem antes de abrir a primeira aba

@@ -1,6 +1,7 @@
 :root{
   --acento:#FFB200;--acento-2:#E6A100;--fundo:#f6f6f4;--cartao:#fff;--texto:#1c1c1c;--suave:#6b6b6b;--borda:#e4e4e0;
   --verde:#17803d;--verde-bg:#e7f6ec;--vermelho:#b3261e;--vermelho-bg:#fdeceb;--amarelo-bg:#fff4d1;
+  --roxo:#6d28d9;--roxo-bg:#f0e7fb;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -203,8 +204,10 @@ h4 span{font-weight:400;color:var(--suave);font-size:13px}
   .s-linha span:nth-child(2){grid-column:1;grid-row:2;font-size:12px}
   .s-linha b{grid-row:1 / span 2;grid-column:2}
 }
-.tag-andamento{display:inline-block;background:var(--verde-bg);color:var(--verde);border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;vertical-align:1px}
-.andamento-obs{margin-top:6px;font-size:13px;color:var(--verde);background:var(--verde-bg);border-left:3px solid var(--verde);border-radius:6px;padding:4px 8px}
+.tag-andamento{display:inline-block;background:var(--roxo-bg);color:var(--roxo);border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;vertical-align:1px}
+.andamento-obs{margin-top:6px;font-size:13px;color:var(--roxo);background:var(--roxo-bg);border-left:3px solid var(--roxo);border-radius:6px;padding:4px 8px}
+.tag-pendente{display:inline-block;background:var(--amarelo-bg);color:#7a5600;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;vertical-align:1px}
+.item-acoes{margin-top:8px;display:flex;justify-content:flex-end}
 /* parcela com data a definir */
 .parcela.sem-data .p-venc{background:var(--amarelo-bg);border-color:#ffd66b}
 .parc.sem-data{background:var(--amarelo-bg);border-color:#ffd66b}
