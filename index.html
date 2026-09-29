@@ -10,11 +10,11 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 (window.__eT?window.__eT.push(function(){s.parentNode.insertBefore(t,s)}):(function(){s.parentNode.insertBefore(t,s)})())}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1752490886001036');
+fbq('init', '2145685069687125');
 fbq('track', 'PageView');
 </script>
 <noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=1752490886001036&ev=PageView&noscript=1"
+src="https://www.facebook.com/tr?id=2145685069687125&ev=PageView&noscript=1"
 /></noscript>
 <!-- Google Tag Manager (GTM-58BFSV6) -->
 <!-- Google Ads: garante gtag_report_conversion global (o bundle legado define isso só dentro de uma closure) -->
@@ -202,7 +202,7 @@ function euroformHandleSubmit(evt) {
       if (data && data.success === 'false') { console.warn('FormSubmit pendente de ativacao:', data.message); }
       form.reset();
       if (typeof fbq === 'function') {
-        if (emailLead || telefoneLead || nomeLead) { fbq('init', '1752490886001036', { em: emailLead, ph: telefoneLead, fn: nomeLead }); }
+        if (emailLead || telefoneLead || nomeLead) { fbq('init', '2145685069687125', { em: emailLead, ph: telefoneLead, fn: nomeLead }); }
         fbq('track', 'Lead');
       }
       if (label) label.textContent = 'Enviado com sucesso!';
