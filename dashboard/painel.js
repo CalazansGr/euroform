@@ -20,7 +20,7 @@
     // despesas fixas do mês precisam existir para entrar no "falta pagar"
     const fixos = App.gerarFixos ? App.gerarFixos(mes).catch(() => {}) : Promise.resolve();
     return fixos.then(() => Promise.all([
-      db.from('ordens').select('id, categoria, valor, nf_emitida, gastos(parcelas(valor))').eq('aprovado', true).gte('data', ini).lte('data', fim),
+      db.from('ordens').select('id, categoria, valor, nf_emitida, custo_interno, gastos(parcelas(valor))').eq('aprovado', true).gte('data', ini).lte('data', fim),
       db.from('parcelas').select('valor, ordem_id, gasto_id').eq('pago', true).gte('pago_em', ini).lte('pago_em', fim),
       db.from('parcelas').select('valor, ordem_id, gasto_id').eq('pago', false).gte('vencimento', ini).lte('vencimento', fim),
       db.from('parcelas').select('valor').not('ordem_id', 'is', null).eq('pago', false).is('vencimento', null)
@@ -30,6 +30,7 @@
       mostrarResumo(ordens, pagas, abertas, soma(semData));
       mostrarTipos(ordens);
       mostrarSimples(ordens);
+      mostrarCusto(ordens);
     });
   }
 
@@ -77,6 +78,14 @@
       `<div class="s-linha"><span>Serviços com NF emitida</span><span>${brl(baseServ)} × ${pct(cfg.ALIQUOTA_SERVICO)}</span><b>${brl(is)}</b></div>` +
       `<div class="s-linha s-total"><span>Simples estimado do mês</span><span></span><b>${brl(r2(iv + is))}</b></div>` +
       (semNF ? `<p class="nota">${brl(semNF)} em serviços sem NF emitida não entram na estimativa.</p>` : '');
+  }
+
+  function mostrarCusto(ordens) {
+    const anotados = ordens.filter((o) => o.custo_interno != null);
+    if (!anotados.length) { $('p-custo').innerHTML = '<p class="nota">Nenhum serviço deste mês tem custo anotado ainda.</p>'; return; }
+    const total = soma(anotados, (o) => o.custo_interno);
+    $('p-custo').innerHTML =
+      `<div class="s-linha s-total"><span>Total anotado (${anotados.length} de ${ordens.length} ${ordens.length === 1 ? 'serviço' : 'serviços'})</span><span></span><b>${brl(total)}</b></div>`;
   }
 
   $('p-mes').addEventListener('input', carregar);

@@ -54,7 +54,8 @@
         (o.em_andamento ? ' <span class="tag-andamento">Em andamento</span>' : '') +
         (o.nf_emitida ? ` <span class="tag-nf">NF${o.nf_numero ? ' nº ' + esc(o.nf_numero) : ' emitida'}</span>` : '') +
         `<div class="item-sub">${CATS[o.categoria]}${o.descricao ? ' · ' + esc(o.descricao) : ''} · ${dataBR(o.data)}</div>` +
-        (o.em_andamento && o.andamento_obs ? `<div class="andamento-obs">${esc(o.andamento_obs)}</div>` : '') + '</div>' +
+        (o.em_andamento && o.andamento_obs ? `<div class="andamento-obs">${esc(o.andamento_obs)}</div>` : '') +
+        (o.custo_interno != null ? `<div class="custo-obs">Custou pra gente: ${brl(Number(o.custo_interno))}</div>` : '') + '</div>' +
         `<b class="item-valor">${brl(Number(o.valor))}</b></div>` +
         `<div class="parcs">${parcelas}</div></article>`;
     }).join('');
@@ -96,6 +97,7 @@
     if (o) {
       $('s-cliente').value = o.cliente; radio(o.cliente_tipo); $('s-categoria').value = o.categoria;
       $('s-data').value = o.data; $('s-descricao').value = o.descricao || ''; $('s-valor').value = o.valor; $('s-obs').value = o.obs || '';
+      $('s-custo').value = o.custo_interno == null ? '' : o.custo_interno;
       radio(o.nf_emitida ? '1' : '0', 's-nf'); $('s-nf-numero').value = o.nf_numero || '';
       radio(o.em_andamento ? '1' : '0', 's-andamento'); $('s-andamento-obs').value = o.andamento_obs || '';
       radio(o.aprovado ? '1' : '0', 's-aprovado');
@@ -125,6 +127,7 @@
       cliente: $('s-cliente').value.trim().replace(/\s+/g, ' '), cliente_tipo: document.querySelector('input[name=s-tipo]:checked').value,
       categoria: $('s-categoria').value, data: $('s-data').value, descricao: $('s-descricao').value.trim() || null,
       valor: r2(num('s-valor')), obs: $('s-obs').value.trim() || null,
+      custo_interno: $('s-custo').value.trim() ? r2(num('s-custo')) : null,
       em_andamento: emAndamento(), andamento_obs: emAndamento() ? ($('s-andamento-obs').value.trim() || null) : null,
       nf_emitida: nfEmitida(), nf_numero: nfEmitida() ? ($('s-nf-numero').value.trim() || null) : null,
       aprovado: document.querySelector('input[name=s-aprovado]:checked').value === '1'
